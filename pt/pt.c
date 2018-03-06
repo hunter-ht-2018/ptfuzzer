@@ -84,7 +84,7 @@ bool perf_init() {
         buf[sz] = '\0';
         perfIntelPtPerfType = (int32_t)strtoul((char*)buf, NULL, 10);
     }
-    
+
     return true;
 }
 
@@ -151,7 +151,7 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
     //不支持kernel-only coverage
     ///////////////
     pe.exclude_kernel = 1;
-    
+
     ///////////////
     //默认关闭，下一个exec()打开
     ///////////////
@@ -236,7 +236,7 @@ void perf_config(pid_t pid, run_t* run)
 		/////////////////////////////////
 	exit(1);
 	}
-	
+
 	if (perf_enable(run) == false) {
 		perror("ERROR: ");
 		printf("Couldn't enable perf counters for pid %d\n", pid);
@@ -331,9 +331,9 @@ uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *l
 	} else {
 		return 0; /* XXX error */
 	}
-	
+
 	*pp = p;
-	
+
 	*last_ip = v;
 	return v;
 }
@@ -376,12 +376,12 @@ bool my_trace_disassembler(decoder_t* self, uint64_t entry_point, run_t* run)
         printf("Out of size--------------------\n");
         return false;
     }
-    
+
     //~ if (entry_point >= run->global->linux.dynamicCutOffAddr) {
 		//~ printf("Out of size--------------------\n");
         //~ return false;
     //~ }
-    
+
     self->handler(entry_point, run);
     return true;
 }
@@ -476,42 +476,42 @@ void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run){
 			p = end;
 			break;
 		}
-		
+
 		int cnt = 0;
-		while (p < end) {	
+		while (p < end) {
 			cnt +=1;
 			byte0 = *p;
-				
+
 			/* pad */
 			if (byte0 == 0) {
 				pad_handler(self, &p);
 				continue;
 			}
-			
+
 			//TSC
 			if (*p == PT_PKT_TSC_BYTE0 && LEFT(PT_PKT_TSC_LEN)){
 				tsc_handler(self, &p);
 				continue;
 			}
-			
+
 			//MTC
 			if (*p == PT_PKT_MTC_BYTE0 && LEFT(PT_PKT_MTC_LEN)){
 				mtc_handler(self, &p);
 				continue;
 			}
-			
+
 			/* tnt8 */
 			if ((byte0 & BIT(0)) == 0 && byte0 != 2){
 				tnt8_handler(self, &p);
 				continue;
 			}
-			
+
 			/* CBR */
 			if (*p == PT_PKT_GENERIC_BYTE0 && LEFT(PT_PKT_CBR_LEN) && p[1] == PT_PKT_CBR_BYTE1) {
 				cbr_handler(self, &p);
 				continue;
 			}
-			
+
 			/* MODE */
 			if (byte0 == PT_PKT_MODE_BYTE0 && LEFT(PT_PKT_MODE_LEN)) {
 				mode_handler(self, &p);
@@ -663,30 +663,14 @@ void perf_analyze(run_t* run)
 		{
 			printf("%d", i);
 		}
-        ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_DISABLE, 0); 
+        ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_DISABLE, 0);
         perf_mmap_parse(run);
         perf_mmap_reset(run);
-        ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_RESET, 0); 
+        ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_RESET, 0);
     }
 }
 
 void perf_reap(run_t* run)
-{   
-    perf_analyze(run);
-}
-
-int main()
 {
-	pid_t pid = 0;
-	scanf("%d", &pid);
-	run_t run = {
-        .pid = 0,
-        .persistentPid = 0,
-        .persistentSock = -1,
-        .tmOutSignaled = false,
-    };
-    
-	perf_init();
-	perf_config(pid, &run);
-	perf_reap(&run);
+    perf_analyze(run);
 }
