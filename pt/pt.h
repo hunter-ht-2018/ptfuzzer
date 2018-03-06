@@ -162,6 +162,8 @@ typedef struct decoder_s{
 	bool pge_enabled;
 } decoder_t;
 
+
+void perf_config(pid_t pid, run_t* run);
 bool perf_init();
 bool perf_open(pid_t pid, run_t* run);
 void perf_close(run_t* run);
