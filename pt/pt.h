@@ -40,6 +40,11 @@
 #define _HF_PERF_BITMAP_SIZE_16M (1024U * 1024U * 16U)
 #define _HF_PERF_BITMAP_BITSZ_MASK 0x7ffffff
 
+////////AFL bitmap
+#define MAP_SIZE_POW2       16
+#define MAP_SIZE            (1 << MAP_SIZE_POW2)
+///////
+
 #define LEFT(x) ((end - p) >= (x))
 #define BIT(x) (1U << (x))
 

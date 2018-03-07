@@ -26,6 +26,13 @@
 /////////////////////////////////////////////////////
 
 
+/////////////////////////////////////////////////////
+
+//~ tnt指令解析，pci_kafl_guest_realize中的tmp0, tmp1的值
+
+/////////////////////////////////////////////////////
+
+
 ///////////////////////全局变量
 static int32_t perfIntelPtPerfType = -1;
 uint64_t last_ip = 0ULL;
@@ -33,6 +40,8 @@ static uint8_t psb[16] = {
 	0x02, 0x82, 0x02, 0x82, 0x02, 0x82, 0x02, 0x82,
 	0x02, 0x82, 0x02, 0x82, 0x02, 0x82, 0x02, 0x82
 };
+
+uint8_t* trace_bits;
 ///////////////////////
 
 
@@ -228,11 +237,10 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
 
 void perf_config(pid_t pid, run_t* run)
 {
-	run->linux.hwCnts.newBBCnt = 0ULL;
 	perf_close(run);
 	if (perf_open(pid, run) == false) {
 		//////////////////////////////////
-		//////pid是运行目标程序的进程的pid/////////////
+		//////pid是运行目标程序的子进程的pid/////////////
 		/////////////////////////////////
 	exit(1);
 	}
@@ -258,25 +266,20 @@ __attribute__((always_inline)) static inline uint8_t ATOMIC_BTS(uint8_t* addr, s
 
 void pt_bitmap(uint64_t addr, run_t* run)
 {
-        if ( (__builtin_expect(last_ip > 0xFFFFFFFF00000000, false) ||
-            __builtin_expect(addr > 0xFFFFFFFF00000000, false))) {
-        return;
-    }
-    //~ if (last_ip >= run->global->linux.dynamicCutOffAddr ||
-        //~ addr >= run->global->linux.dynamicCutOffAddr) {
-        //~ return;
-    //~ }
+    if ( (__builtin_expect(last_ip > 0xFFFFFFFF00000000, false) ||
+       __builtin_expect(addr > 0xFFFFFFFF00000000, false))) {
+		printf("Out of bounds!\n");
+       return;
+	}
+	
+	//64位地址截断为16位
+    uint16_t last_ip16, addr16, pos16;
+    last_ip16 = (uint16_t)(last_ip);
+    addr16 = (uint16_t)(addr);
+    pos16 = (uint16_t)(last_ip16 ^ addr16);
+    trace_bits[pos16]++;
 
-	////////////////////////需要重写
-    register size_t pos = ((last_ip << 12) ^ (addr & 0xFFF));
-    pos &= _HF_PERF_BITMAP_BITSZ_MASK;
-    register uint8_t prev = 1;//ATOMIC_BTS(run->global->feedback->bbMapPc, pos);
-    if (!prev) {
-        run->linux.hwCnts.newBBCnt++;
-    }
-
-    last_ip = addr;
-    ///////////////////////////
+    last_ip = addr >> 1;
 }
 
 decoder_t* pt_decoder_init(uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t, run_t*)){
@@ -376,11 +379,6 @@ bool my_trace_disassembler(decoder_t* self, uint64_t entry_point, run_t* run)
         printf("Out of size--------------------\n");
         return false;
     }
-
-    //~ if (entry_point >= run->global->linux.dynamicCutOffAddr) {
-		//~ printf("Out of size--------------------\n");
-        //~ return false;
-    //~ }
 
     self->handler(entry_point, run);
     return true;
@@ -659,11 +657,11 @@ void perf_mmap_parse(run_t* run) {
 void perf_analyze(run_t* run)
 {
 	if (_HF_DYNFILE_IPT_BLOCK) {
-		for(int i = 1; i <= 100; i++)
-		{
-			printf("%d", i);
-		}
         ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_DISABLE, 0);
+        
+        //解析pt之前设置bitmap
+        memset(trace_bits, 0, MAP_SIZE);
+        
         perf_mmap_parse(run);
         perf_mmap_reset(run);
         ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_RESET, 0);
