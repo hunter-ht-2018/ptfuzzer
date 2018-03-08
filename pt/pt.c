@@ -88,6 +88,10 @@ ssize_t files_readFileToBufMax(char* fileName, uint8_t* buf, size_t fileMaxSz) {
 bool perf_init() {
 	//AFL里面有无malloc？
 	trace_bits = malloc(MAP_SIZE * sizeof(uint8_t));
+	if(trace_bits == NULL)
+	{
+		return false;
+	}
 	
     uint8_t buf[PATH_MAX + 1];
     ssize_t sz =
@@ -96,6 +100,7 @@ bool perf_init() {
         buf[sz] = '\0';
         perfIntelPtPerfType = (int32_t)strtoul((char*)buf, NULL, 10);
     }
+    else return false;
 
     return true;
 }
@@ -138,7 +143,10 @@ void perf_close(run_t* run) {
 bool perf_enable(run_t* run) {
 
     if (_HF_DYNFILE_IPT_BLOCK) {
-        ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_ENABLE, 0);
+        if(ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_ENABLE, 0) < 0)
+	{
+		return false;
+	}
     }
     return true;
 }
@@ -238,21 +246,22 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
     return true;
 }
 
-void perf_config(pid_t pid, run_t* run)
+bool perf_config(pid_t pid, run_t* run)
 {
 	perf_close(run);
 	if (perf_open(pid, run) == false) {
 		//////////////////////////////////
 		//////pid是运行目标程序的子进程的pid/////////////
 		/////////////////////////////////
-	exit(1);
+		return false;
 	}
 
 	if (perf_enable(run) == false) {
 		perror("ERROR: ");
 		printf("Couldn't enable perf counters for pid %d\n", pid);
-		exit(1);
+		return false;
 	}
+	return true;
 }
 
 #define ATOMIC_POST_OR_RELAXED(x, y) __atomic_fetch_or(&(x), y, __ATOMIC_RELAXED)
@@ -615,7 +624,7 @@ void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run){
 	}
 }
 
-void pt_analyze(run_t* run) {
+bool pt_analyze(run_t* run) {
 
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux.perfMmapBuf;
     uint64_t aux_tail = ATOMIC_GET(pem->aux_tail);
@@ -625,11 +634,14 @@ void pt_analyze(run_t* run) {
     //~ uint8_t* buf;
     //~ buf = malloc(0xffffffffffffffff);
     self = pt_decoder_init(0, 0xffffffffffffffff, &pt_bitmap);
+    if(self == NULL)
+		return false;
     decode_buffer(self, run->linux.perfMmapAux, (aux_head -1 - aux_tail), run);
+    return true;
 }
 
 #define wmb() __sync_synchronize()
-void perf_mmap_reset(run_t* run) {
+bool perf_mmap_reset(run_t* run) {
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux.perfMmapBuf;
     ATOMIC_SET(pem->data_head, 0);
     ATOMIC_SET(pem->data_tail, 0);
@@ -638,42 +650,58 @@ void perf_mmap_reset(run_t* run) {
     ATOMIC_SET(pem->aux_tail, 0);
 #endif /* defined(PERF_ATTR_SIZE_VER5) */
     wmb();
+    return true;
 }
 
-void perf_mmap_parse(run_t* run) {
+bool perf_mmap_parse(run_t* run) {
 #if defined(PERF_ATTR_SIZE_VER5)
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux.perfMmapBuf;
     if (pem->aux_head == pem->aux_tail) {
         printf("The aux_head == aux_tail\n");
-        exit(1);
+        return false;
     }
     if (pem->aux_head < pem->aux_tail) {
         printf("The PERF AUX data has been overwritten. The AUX buffer is too small\n");
-        exit(1);
+        return false;
     }
     if (_HF_DYNFILE_IPT_BLOCK) {
-        pt_analyze(run);
+        if(pt_analyze(run) == false)
+			return false;
     }
+    return true;
 #endif /* defined(PERF_ATTR_SIZE_VER5) */
 }
 
-void perf_analyze(run_t* run)
+bool perf_analyze(run_t* run)
 {
 	if (_HF_DYNFILE_IPT_BLOCK) {
-        ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_DISABLE, 0);
+        if(ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_DISABLE, 0) < 0)
+        {
+			perror("Error: ");
+			return false;
+		}
         
         //解析pt之前设置bitmap
         memset(trace_bits, 0, MAP_SIZE);
         
-        perf_mmap_parse(run);
-        perf_mmap_reset(run);
-        ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_RESET, 0);
+        if(perf_mmap_parse(run) == false)
+			return false;
+        if(perf_mmap_reset(run) == false)
+			return false;
+        if(ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_RESET, 0) > 0)
+        {
+			perror("Error: ");
+			return false;
+		}
     }
+    return true;
 }
 
-void perf_reap(run_t* run)
+bool perf_reap(run_t* run)
 {
-    perf_analyze(run);
+	if(perf_analyze(run) == false)
+		return false;
+	return true;
 }
 
 void print_bitmap()

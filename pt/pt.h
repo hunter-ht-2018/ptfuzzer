@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <stdio.h>
+#include <wait.h>
 
 /* Size (in bytes) for report data to be stored in stack before written to file */
 #define _HF_REPORT_SIZE 8192
@@ -168,23 +169,22 @@ typedef struct decoder_s{
 } decoder_t;
 
 
-void perf_config(pid_t pid, run_t* run);
+bool perf_config(pid_t pid, run_t* run);
 bool perf_init();
 bool perf_open(pid_t pid, run_t* run);
 void perf_close(run_t* run);
 bool perf_enable(run_t* run);
-void perf_analyze(run_t* run);
+bool perf_analyze(run_t* run);
 bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd);
-void perf_reap(run_t* run);
-void perf_mmap_parse(run_t* run);
-void perf_mmap_reset(run_t* run);
+bool perf_reap(run_t* run);
+bool perf_mmap_parse(run_t* run);
+bool perf_mmap_reset(run_t* run);
 void pt_bitmap(uint64_t addr, run_t* run);
-void pt_analyze(run_t* run);
+bool pt_analyze(run_t* run);
 decoder_t* pt_decoder_init(uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t, run_t*));
 void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run);
 void pt_decoder_destroy(decoder_t* self);
 void pt_decoder_flush(decoder_t* self);
-void pt_bitmap(uint64_t addr, run_t* run);
 void print_bitmap();
 
 #endif

@@ -10,7 +10,11 @@ int main()
         	.tmOutSignaled = false
     	};
 
-	perf_init();
+	if(perf_init() == false)
+	{
+		printf("Initial failed\n");
+		exit(1);
+	}
 	
 	pid_t pid;        //进程标识符
 	pid = fork();     //创建一个新的进程
@@ -36,7 +40,11 @@ int main()
 	{
 		printf("这是父进程,进程标识符是%d\n",getpid());
 		
-		perf_config(pid, &run);
+		if(perf_config(pid, &run) == false)
+		{
+			printf("Config failed\n");
+			exit(1);
+		}
 		
 		if(waitpid(pid, &status, 0) <= 0)
 		{
@@ -44,7 +52,11 @@ int main()
 			exit(1);
 		}
 		
-		perf_reap(&run);
+		if(perf_reap(&run) == false)
+		{
+			printf("Analyze pt failed\n");
+			exit(1);
+		}
 		print_bitmap();
 	}
 	
