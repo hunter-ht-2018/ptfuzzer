@@ -86,6 +86,9 @@ ssize_t files_readFileToBufMax(char* fileName, uint8_t* buf, size_t fileMaxSz) {
 }
 
 bool perf_init() {
+	//AFL里面有无malloc？
+	trace_bits = malloc(MAP_SIZE * sizeof(uint8_t));
+	
     uint8_t buf[PATH_MAX + 1];
     ssize_t sz =
         files_readFileToBufMax("/sys/bus/event_source/devices/intel_pt/type", buf, sizeof(buf) - 1);
@@ -671,4 +674,11 @@ void perf_analyze(run_t* run)
 void perf_reap(run_t* run)
 {
     perf_analyze(run);
+}
+
+void print_bitmap()
+{
+	for(int i = 0; i < MAP_SIZE; i++)
+		printf("%u", trace_bits[i]);
+	printf("\n\n");
 }

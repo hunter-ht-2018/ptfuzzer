@@ -185,5 +185,6 @@ void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run);
 void pt_decoder_destroy(decoder_t* self);
 void pt_decoder_flush(decoder_t* self);
 void pt_bitmap(uint64_t addr, run_t* run);
+void print_bitmap();
 
 #endif

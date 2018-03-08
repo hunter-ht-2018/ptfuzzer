@@ -2,6 +2,7 @@
 
 int main()
 {
+	int status;
 	run_t run = {
         	.pid = 0,
         	.persistentPid = 0,
@@ -27,14 +28,24 @@ int main()
 			printf("%d", i);
 		}
 		printf("\n");
-		
-		perf_config(pid, &run);
+		sleep(3);
+		exit(0);
 	}
 	
 	else          //否则为父进程
 	{
 		printf("这是父进程,进程标识符是%d\n",getpid());
+		
+		perf_config(pid, &run);
+		
+		if(waitpid(pid, &status, 0) <= 0)
+		{
+			perror("Error: ");
+			exit(1);
+		}
+		
 		perf_reap(&run);
+		print_bitmap();
 	}
 	
 	return 0;
