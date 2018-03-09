@@ -144,7 +144,7 @@ typedef struct {
         hwcnt_t hwCnts;
         pid_t attachedPid;
         int cpuIptBtsFd;
-    }linux;
+    }linux_t;
 }run_t;
 
 typedef enum {

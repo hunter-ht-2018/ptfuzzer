@@ -81,7 +81,7 @@ ssize_t files_readFileToBufMax(char* fileName, uint8_t* buf, size_t fileMaxSz) {
     }
     close(fd);
 
-    printf("Read '%zu' bytes from '%s'\n", readSz, fileName);
+    //printf("Read '%zu' bytes from '%s'\n", readSz, fileName);
     return readSz;
 }
 
@@ -108,7 +108,7 @@ bool perf_init() {
 bool perf_open(pid_t pid, run_t* run) {
 
     if (_HF_DYNFILE_IPT_BLOCK) {
-        if (perf_create(run, pid, _HF_DYNFILE_IPT_BLOCK, &run->linux.cpuIptBtsFd) == false) {
+        if (perf_create(run, pid, _HF_DYNFILE_IPT_BLOCK, &run->linux_t.cpuIptBtsFd) == false) {
             printf("Cannot set up perf for PID=%d (_HF_DYNFILE_IPT_BLOCK)\n", pid);
             goto out;
         }
@@ -117,33 +117,33 @@ bool perf_open(pid_t pid, run_t* run) {
     return true;
 
 out:
-    close(run->linux.cpuIptBtsFd);
-    run->linux.cpuIptBtsFd = 1;
+    close(run->linux_t.cpuIptBtsFd);
+    run->linux_t.cpuIptBtsFd = 1;
 
     return false;
 }
 
 void perf_close(run_t* run) {
 
-    if (run->linux.perfMmapAux != NULL) {
-        munmap(run->linux.perfMmapAux, _HF_PERF_AUX_SZ);
-        run->linux.perfMmapAux = NULL;
+    if (run->linux_t.perfMmapAux != NULL) {
+        munmap(run->linux_t.perfMmapAux, _HF_PERF_AUX_SZ);
+        run->linux_t.perfMmapAux = NULL;
     }
-    if (run->linux.perfMmapBuf != NULL) {
-        munmap(run->linux.perfMmapBuf, _HF_PERF_MAP_SZ + getpagesize());
-        run->linux.perfMmapBuf = NULL;
+    if (run->linux_t.perfMmapBuf != NULL) {
+        munmap(run->linux_t.perfMmapBuf, _HF_PERF_MAP_SZ + getpagesize());
+        run->linux_t.perfMmapBuf = NULL;
     }
 
     if (_HF_DYNFILE_IPT_BLOCK) {
-        close(run->linux.cpuIptBtsFd);
-        run->linux.cpuIptBtsFd = -1;
+        close(run->linux_t.cpuIptBtsFd);
+        run->linux_t.cpuIptBtsFd = -1;
     }
 }
 
 bool perf_enable(run_t* run) {
 
     if (_HF_DYNFILE_IPT_BLOCK) {
-        if(ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_ENABLE, 0) < 0)
+        if(ioctl(run->linux_t.cpuIptBtsFd, PERF_EVENT_IOC_ENABLE, 0) < 0)
 	{
 		return false;
 	}
@@ -152,7 +152,7 @@ bool perf_enable(run_t* run) {
 }
 
 bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
-    printf("Enabling PERF for PID=%d method=%x\n", pid, method);
+    //printf("Enabling PERF for PID=%d method=%x\n", pid, method);
 
     if (*perfFd != -1) {
         printf("The PERF FD is already initialized, possibly conflicting perf types enabled\n");
@@ -181,7 +181,7 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
 
     switch (method) {
         case _HF_DYNFILE_IPT_BLOCK:
-            printf("Using: (Intel PT) type=%" PRIu32 " for PID: %d\n", perfIntelPtPerfType, pid);
+            //printf("Using: (Intel PT) type=%" PRIu32 " for PID: %d\n", perfIntelPtPerfType, pid);
             pe.type = perfIntelPtPerfType;
             pe.config = (1U << 11); /* Disable RETCompression */
             break;
@@ -205,11 +205,11 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
         return true;
     }
 #if defined(PERF_ATTR_SIZE_VER5)
-    run->linux.perfMmapBuf =
+    run->linux_t.perfMmapBuf =
         mmap(NULL, _HF_PERF_MAP_SZ + getpagesize(), PROT_READ | PROT_WRITE, MAP_SHARED, *perfFd, 0);
-    if (run->linux.perfMmapBuf == MAP_FAILED) {
+    if (run->linux_t.perfMmapBuf == MAP_FAILED) {
 		perror("ERROR: ");
-        run->linux.perfMmapBuf = NULL;
+        run->linux_t.perfMmapBuf = NULL;
         printf(
             "mmap(mmapBuf) failed, sz=%zu, try increasing the kernel.perf_event_mlock_kb sysctl "
             "(up to even 300000000)\n",
@@ -223,14 +223,14 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
     //~ needs to be set to the desired buffer size.  The desired off‐
     //~ set and size must be page aligned, and the size must be a
     //~ power of two.
-    struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux.perfMmapBuf;
+    struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux_t.perfMmapBuf;
     pem->aux_offset = pem->data_offset + pem->data_size;
     pem->aux_size = _HF_PERF_AUX_SZ;
-    run->linux.perfMmapAux =
+    run->linux_t.perfMmapAux =
         mmap(NULL, pem->aux_size, PROT_READ | PROT_WRITE, MAP_SHARED, *perfFd, pem->aux_offset);
-    if (run->linux.perfMmapAux == MAP_FAILED) {
-        munmap(run->linux.perfMmapBuf, _HF_PERF_MAP_SZ + getpagesize());
-        run->linux.perfMmapBuf = NULL;
+    if (run->linux_t.perfMmapAux == MAP_FAILED) {
+        munmap(run->linux_t.perfMmapBuf, _HF_PERF_MAP_SZ + getpagesize());
+        run->linux_t.perfMmapBuf = NULL;
         perror("ERROR: ");
         printf(
             "mmap(mmapAuxBuf) failed, try increasing the kernel.perf_event_mlock_kb sysctl (up to "
@@ -240,7 +240,7 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
         return false;
     }
 #else  /* defined(PERF_ATTR_SIZE_VER5) */
-    //~ LOG_F("Your <linux/perf_event.h> includes are too old to support Intel PT/BTS");
+    //~ LOG_F("Your <linux_t/perf_event.h> includes are too old to support Intel PT/BTS");
 #endif /* defined(PERF_ATTR_SIZE_VER5) */
 
     return true;
@@ -626,7 +626,7 @@ void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run){
 
 bool pt_analyze(run_t* run) {
 
-    struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux.perfMmapBuf;
+    struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux_t.perfMmapBuf;
     uint64_t aux_tail = ATOMIC_GET(pem->aux_tail);
     uint64_t aux_head = ATOMIC_GET(pem->aux_head);
 
@@ -636,13 +636,13 @@ bool pt_analyze(run_t* run) {
     self = pt_decoder_init(0, 0xffffffffffffffff, &pt_bitmap);
     if(self == NULL)
 		return false;
-    decode_buffer(self, run->linux.perfMmapAux, (aux_head -1 - aux_tail), run);
+    decode_buffer(self, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
     return true;
 }
 
 #define wmb() __sync_synchronize()
 bool perf_mmap_reset(run_t* run) {
-    struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux.perfMmapBuf;
+    struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux_t.perfMmapBuf;
     ATOMIC_SET(pem->data_head, 0);
     ATOMIC_SET(pem->data_tail, 0);
 #if defined(PERF_ATTR_SIZE_VER5)
@@ -655,7 +655,7 @@ bool perf_mmap_reset(run_t* run) {
 
 bool perf_mmap_parse(run_t* run) {
 #if defined(PERF_ATTR_SIZE_VER5)
-    struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux.perfMmapBuf;
+    struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux_t.perfMmapBuf;
     if (pem->aux_head == pem->aux_tail) {
         printf("The aux_head == aux_tail\n");
         return false;
@@ -675,7 +675,7 @@ bool perf_mmap_parse(run_t* run) {
 bool perf_analyze(run_t* run)
 {
 	if (_HF_DYNFILE_IPT_BLOCK) {
-        if(ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_DISABLE, 0) < 0)
+        if(ioctl(run->linux_t.cpuIptBtsFd, PERF_EVENT_IOC_DISABLE, 0) < 0)
         {
 			perror("Error: ");
 			return false;
@@ -688,7 +688,7 @@ bool perf_analyze(run_t* run)
 			return false;
         if(perf_mmap_reset(run) == false)
 			return false;
-        if(ioctl(run->linux.cpuIptBtsFd, PERF_EVENT_IOC_RESET, 0) > 0)
+        if(ioctl(run->linux_t.cpuIptBtsFd, PERF_EVENT_IOC_RESET, 0) > 0)
         {
 			perror("Error: ");
 			return false;
