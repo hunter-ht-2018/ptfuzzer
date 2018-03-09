@@ -710,3 +710,8 @@ void print_bitmap()
 		printf("%u", trace_bits[i]);
 	printf("\n\n");
 }
+
+uint8_t* get_trace_bits()
+{
+	return trace_bits;
+}
