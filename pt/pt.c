@@ -637,6 +637,7 @@ bool pt_analyze(run_t* run) {
     if(self == NULL)
 		return false;
     decode_buffer(self, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
+    pt_decoder_destroy(self);
     return true;
 }
 
