@@ -370,7 +370,6 @@ static inline cofi_list* get_obj(disassembler_t* self, uint64_t entry_point, tnt
 bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tnt_cache_t* tnt_cache_state){
 	cofi_list *obj, *last_obj;
 	uint8_t tnt;
-	int fd = 0; 
 	int last_type = -1;
 		
 	obj = get_obj(self, entry_point, tnt_cache_state);

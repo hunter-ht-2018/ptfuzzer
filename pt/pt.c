@@ -306,14 +306,8 @@ bool perf_config(pid_t pid, run_t* run)
 }
 
 
-void pt_bitmap(uint64_t addr, run_t* run)
-{
-    if ( (__builtin_expect(last_ip > 0xFFFFFFFF00000000, false) ||
-       __builtin_expect(addr > 0xFFFFFFFF00000000, false))) {
-		printf("Out of bounds!\n");
-       return;
-	}
-	
+void pt_bitmap(uint64_t addr)
+{	
 	//64位地址截断为16位
     uint16_t last_ip16, addr16, pos16;
     last_ip16 = (uint16_t)(last_ip);
@@ -324,7 +318,7 @@ void pt_bitmap(uint64_t addr, run_t* run)
     last_ip = addr >> 1;
 }
 
-decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t, run_t*)){
+decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t)){
 	decoder_t* res = malloc(sizeof(decoder_t));
 	res->code = code;
 	res->min_addr = min_addr;
@@ -670,6 +664,27 @@ bool pt_analyze(run_t* run) {
     decoder_t* self;
     uint8_t* buf;
     buf = malloc(max_addr_cle - min_addr_cle);
+    memset(buf, 0, max_addr_cle - min_addr_cle);
+    
+    //将目标程序拷入buf
+    FILE* pt_file = fopen("../raw_bin", "rb");
+    if(NULL == pt_file)
+    {
+        printf("Error:Open raw_bin.txt file fail!\n");
+        return false;
+    }
+    
+    int count;
+    while (!feof (pt_file)){
+        count = fread (buf, sizeof(uint8_t), max_addr_cle - min_addr_cle, pt_file);
+        int n = feof (pt_file);
+        printf ("%d,%d\n", count, n);
+        printf ("%s\n",strerror (errno));
+    }
+
+    fclose(pt_file);
+    printf("\n\n%s\n\n", buf);
+    
     self = pt_decoder_init(buf, min_addr_cle, max_addr_cle, &pt_bitmap);
     if(self == NULL)
 		return false;

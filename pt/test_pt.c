@@ -26,14 +26,12 @@ int main()
 	else if(pid==0)   //如果pid为0则表示当前执行的是子进程
 	{
 		printf("这是子进程,进程标识符是%d\n",getpid());
-		
-		for(int i = 1; i <= 100; i++)
-		{
-			printf("%d", i);
-		}
-		//execv(target_path, argv);
-		printf("\n");
-		sleep(3);
+		//执行ls
+		printf("execv\n");
+		sleep(2);
+		execv("/bin/ls", "-la");
+		printf("execv\n");
+		sleep(2);
 		exit(0);
 	}
 	
