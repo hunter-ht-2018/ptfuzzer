@@ -41,7 +41,8 @@ static uint8_t psb[16] = {
 	0x02, 0x82, 0x02, 0x82, 0x02, 0x82, 0x02, 0x82
 };
 
-uint8_t* trace_bits;
+uint8_t* trace_bits;    
+uint64_t min_addr_cle, max_addr_cle, entry_point_cle;
 ///////////////////////
 
 
@@ -85,11 +86,50 @@ ssize_t files_readFileToBufMax(char* fileName, uint8_t* buf, size_t fileMaxSz) {
     return readSz;
 }
 
+bool get_addr_cle()
+{
+	FILE *fp;   
+	int MAX_LINE = 1024;
+    char strLine[MAX_LINE];                             //读取缓冲区  
+    char* endptr;
+    if((fp = fopen("../min_max.txt","r")) == NULL)      //判断文件是否存在及可读  
+    {   
+        printf("Open Falied!");   
+        return false;   
+    } 
+    
+    fgets(strLine,MAX_LINE,fp);
+    min_addr_cle = strtoull(strLine, &endptr, 10);
+    fgets(strLine,MAX_LINE,fp);
+    max_addr_cle = strtoull(strLine, &endptr, 10);
+    fgets(strLine,MAX_LINE,fp);
+    entry_point_cle = strtoull(strLine, &endptr, 10);
+    //~ printf("%lu %lu %lu\n", min_addr_cle, max_addr_cle, entry_point_cle);
+    fclose(fp);
+    return true;
+}
+
 bool perf_init() {
 	//AFL里面有无malloc？
 	trace_bits = malloc(MAP_SIZE * sizeof(uint8_t));
 	if(trace_bits == NULL)
 	{
+		return false;
+	}
+	
+	//读取min_max.txt中的内容
+	    
+	min_addr_cle = 0ULL;
+	max_addr_cle = 0ULL;
+	entry_point_cle = 0ULL;
+	
+	if(get_addr_cle() == false)
+	{
+		return false;
+	}
+	if(min_addr_cle == 0ULL || max_addr_cle == 0ULL || entry_point_cle == 0ULL)
+	{
+		printf("Error: addr = 0\n");
 		return false;
 	}
 	
@@ -248,6 +288,7 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
 
 bool perf_config(pid_t pid, run_t* run)
 {
+	last_ip = 0ULL;
 	perf_close(run);
 	if (perf_open(pid, run) == false) {
 		//////////////////////////////////
@@ -262,17 +303,6 @@ bool perf_config(pid_t pid, run_t* run)
 		return false;
 	}
 	return true;
-}
-
-#define ATOMIC_POST_OR_RELAXED(x, y) __atomic_fetch_or(&(x), y, __ATOMIC_RELAXED)
-#define ATOMIC_GET(x) __atomic_load_n(&(x), __ATOMIC_SEQ_CST)
-#define ATOMIC_SET(x, y) __atomic_store_n(&(x), y, __ATOMIC_SEQ_CST)
-
-__attribute__((always_inline)) static inline uint8_t ATOMIC_BTS(uint8_t* addr, size_t offset) {
-    uint8_t oldbit;
-    addr += (offset / 8);
-    oldbit = ATOMIC_POST_OR_RELAXED(*addr, ((uint8_t)1U << (offset % 8)));
-    return oldbit;
 }
 
 
@@ -294,8 +324,9 @@ void pt_bitmap(uint64_t addr, run_t* run)
     last_ip = addr >> 1;
 }
 
-decoder_t* pt_decoder_init(uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t, run_t*)){
+decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t, run_t*)){
 	decoder_t* res = malloc(sizeof(decoder_t));
+	res->code = code;
 	res->min_addr = min_addr;
 	res->max_addr = max_addr;
 	res->handler = handler;
@@ -305,10 +336,19 @@ decoder_t* pt_decoder_init(uint64_t min_addr, uint64_t max_addr, void (*handler)
 	res->fup_pkt = false;
 	res->isr = false;
 	res->in_range = false;
+	
+	res->disassembler_state = init_disassembler(code, min_addr, max_addr, handler);
+    res->tnt_cache_state = tnt_cache_init();
+	
 	return res;
 }
 
 void pt_decoder_destroy(decoder_t* self){
+	if(self->tnt_cache_state){
+        destroy_disassembler(self->disassembler_state);
+        tnt_cache_destroy(self->tnt_cache_state);
+        self->tnt_cache_state = NULL;
+    }
 	free(self);
 }
 
@@ -318,9 +358,6 @@ void pt_decoder_flush(decoder_t* self){
 	self->fup_pkt = false;
 	self->isr = false;
 	self->in_range = false;
-#ifdef DECODER_LOG
-	flush_log(self);
-#endif
 }
 
 uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip)
@@ -371,7 +408,7 @@ static inline void pad_handler(decoder_t* self, uint8_t** p){
 
 static inline void tnt8_handler(decoder_t* self, uint8_t** p){
 	(void)self;
-	//~ append_tnt_cache(self->tnt_cache_state, true, (uint64_t)(**p));
+	append_tnt_cache(self->tnt_cache_state, true, (uint64_t)(**p));
 	(*p)++;
 }
 
@@ -385,36 +422,31 @@ static inline void mode_handler(decoder_t* self, uint8_t** p){
 	(*p) += PT_PKT_MODE_LEN;
 }
 
-bool my_trace_disassembler(decoder_t* self, uint64_t entry_point, run_t* run)
-{
-	if ( (__builtin_expect(entry_point > 0xFFFFFFFF00000000, false))) {
-        printf("Out of size--------------------\n");
-        return false;
-    }
-
-    self->handler(entry_point, run);
-    return true;
-}
-
 static inline void tip_handler(decoder_t* self, uint8_t** p, uint8_t** end, run_t* run){
-	my_trace_disassembler(self, self->last_tip, run);
+	if (count_tnt(self->tnt_cache_state)){
+		trace_disassembler(self->disassembler_state, self->last_tip, (self->isr &!self->in_range), self->tnt_cache_state);
+	}
 	self->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &self->last_ip2);
 }
 
 static inline void tip_pge_handler(decoder_t* self, uint8_t** p, uint8_t** end, run_t* run){
 	self->pge_enabled = true;
 	self->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &self->last_ip2);
-	my_trace_disassembler(self, self->last_tip, run);
+	trace_disassembler(self->disassembler_state, self->last_tip, (self->isr &!self->in_range), self->tnt_cache_state);
 }
 
 static inline void tip_pgd_handler(decoder_t* self, uint8_t** p, uint8_t** end, run_t* run){
 	self->pge_enabled = false;
-	my_trace_disassembler(self, self->last_tip, run);
+	if (count_tnt(self->tnt_cache_state)){
+		trace_disassembler(self->disassembler_state, self->last_tip, (self->isr &!self->in_range), self->tnt_cache_state);
+	}
 	self->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &self->last_ip2);
 }
 
 static inline void tip_fup_handler(decoder_t* self, uint8_t** p, uint8_t** end, run_t* run){
-	my_trace_disassembler(self, self->last_tip, run);
+	if (count_tnt(self->tnt_cache_state)){
+		trace_disassembler(self->disassembler_state, self->last_tip, (self->isr &!self->in_range), self->tnt_cache_state);
+	}
 	self->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &self->last_ip2);
 }
 
@@ -434,7 +466,8 @@ static inline void psbend_handler(decoder_t* self, uint8_t** p){
 }
 
 static inline void long_tnt_handler(decoder_t* self, uint8_t** p){
-	(void)self;
+	if (self->pge_enabled)
+        append_tnt_cache(self->tnt_cache_state, false, (uint64_t)*p);
 	(*p) += PT_PKT_LTNT_LEN;
 }
 
@@ -624,6 +657,10 @@ void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run){
 	}
 }
 
+#define ATOMIC_POST_OR_RELAXED(x, y) __atomic_fetch_or(&(x), y, __ATOMIC_RELAXED)
+#define ATOMIC_GET(x) __atomic_load_n(&(x), __ATOMIC_SEQ_CST)
+#define ATOMIC_SET(x, y) __atomic_store_n(&(x), y, __ATOMIC_SEQ_CST)
+
 bool pt_analyze(run_t* run) {
 
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux_t.perfMmapBuf;
@@ -631,13 +668,14 @@ bool pt_analyze(run_t* run) {
     uint64_t aux_head = ATOMIC_GET(pem->aux_head);
 
     decoder_t* self;
-    //~ uint8_t* buf;
-    //~ buf = malloc(0xffffffffffffffff);
-    self = pt_decoder_init(0, 0xffffffffffffffff, &pt_bitmap);
+    uint8_t* buf;
+    buf = malloc(max_addr_cle - min_addr_cle);
+    self = pt_decoder_init(buf, min_addr_cle, max_addr_cle, &pt_bitmap);
     if(self == NULL)
 		return false;
     decode_buffer(self, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
     pt_decoder_destroy(self);
+    free(buf);
     return true;
 }
 

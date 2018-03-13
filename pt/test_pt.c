@@ -58,7 +58,7 @@ int main()
 			printf("Analyze pt failed\n");
 			exit(1);
 		}
-		print_bitmap();
+		//~ print_bitmap();
 	}
 	
 	return 0;

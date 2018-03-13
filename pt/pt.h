@@ -34,6 +34,9 @@
 #include <stdio.h>
 #include <wait.h>
 
+#include "disassembler.h"
+//~ #include "tnt_cache.h"
+
 /* Size (in bytes) for report data to be stored in stack before written to file */
 #define _HF_REPORT_SIZE 8192
 #define _HF_PERF_MAP_SZ (1024 * 512)
@@ -157,6 +160,7 @@ typedef enum {
 }dynFileMethod_t;
 
 typedef struct decoder_s{
+	uint8_t* code;
 	uint64_t min_addr;
 	uint64_t max_addr;
 	void (*handler)(uint64_t, run_t*);
@@ -166,6 +170,8 @@ typedef struct decoder_s{
 	bool isr;
 	bool in_range;
 	bool pge_enabled;
+	disassembler_t* disassembler_state;
+    tnt_cache_t* tnt_cache_state;
 } decoder_t;
 
 
@@ -181,11 +187,12 @@ bool perf_mmap_parse(run_t* run);
 bool perf_mmap_reset(run_t* run);
 void pt_bitmap(uint64_t addr, run_t* run);
 bool pt_analyze(run_t* run);
-decoder_t* pt_decoder_init(uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t, run_t*));
+decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t, run_t*));
 void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run);
 void pt_decoder_destroy(decoder_t* self);
 void pt_decoder_flush(decoder_t* self);
 void print_bitmap();
 uint8_t* get_trace_bits();
+bool get_addr_cle();
 
 #endif
