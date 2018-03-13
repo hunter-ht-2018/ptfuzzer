@@ -10,33 +10,30 @@ args = parser.parse_args()
 
 ld = cle.Loader(args.string)
 
+f = open("./raw_bin", "wb")
+bin_code = ""
+
 entry = ld.main_object.entry
+# 'data', 'header', 'is_null', 'name', 'stream'
 
-#~ sec = ld.main_object.reader.get_section_by_name(".text")
-#~ print sec.header.sh_addr, sec.header.sh_size
-#~ raw_bytes = ld.memory.read_bytes(sec.header.sh_addr, sec.header.sh_size)
-#~ for byte in raw_bytes:
-	#~ bin_code += byte
 
-# for i in ld.main_object.sections:
-# 	if i.name == ".text":
-# 		print i.vaddr, i.filesize
-# 		raw_bytes = ld.memory.read_bytes(i.vaddr, i.filesize)
-# 		for byte in raw_bytes:
-# 			bin_code += byte
+for i in ld.main_object.sections:
+	if i.name == ".text":
+		print i.vaddr, i.filesize
+		min_addr = i.vaddr
+		max_addr = i.vaddr + i.filesize
+		raw_bytes = ld.memory.read_bytes(i.vaddr, i.filesize)
+		for byte in raw_bytes:
+			bin_code += byte
 
-#~ print len(bin_code)
-#~ f.write(bin_code)
-#~ f.close()
-
-# print hex(entry)
-
-min_addr = ld.main_object.min_addr
-max_addr = ld.main_object.max_addr
-
-f = open("./min_max.txt", "w")
-f.write(str(min_addr) + "\n" + str(max_addr) + "\n" + str(entry))
+print len(bin_code)
+f.write(bin_code)
 f.close()
+
+
+faddr = open("./min_max.txt", "w")
+faddr.write(str(min_addr) + "\n" + str(max_addr) + "\n" + str(entry))
+faddr.close()
 
 
 
