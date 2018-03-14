@@ -34,6 +34,9 @@
 #include <stdio.h>
 #include <wait.h>
 
+#include "disassembler.h"
+//~ #include "tnt_cache.h"
+
 /* Size (in bytes) for report data to be stored in stack before written to file */
 #define _HF_REPORT_SIZE 8192
 #define _HF_PERF_MAP_SZ (1024 * 512)
@@ -49,77 +52,77 @@
 #define LEFT(x) ((end - p) >= (x))
 #define BIT(x) (1U << (x))
 
-#define BENCHMARK               1
+#define BENCHMARK 				1
 
 
 //++++++++++++++++++++++++++++++++++++++
 //++++++++++++++++++++++++++++++++++++++
 
-#define PT_PKT_TSC_LEN      8
-#define PT_PKT_TSC_BYTE0    0b00011001
+#define PT_PKT_TSC_LEN		8
+#define PT_PKT_TSC_BYTE0	0b00011001
 
-#define PT_PKT_MTC_LEN      2
-#define PT_PKT_MTC_BYTE0    0b01011001
+#define PT_PKT_MTC_LEN		2
+#define PT_PKT_MTC_BYTE0	0b01011001
 
 //++++++++++++++++++++++++++++++++++++++
 //++++++++++++++++++++++++++++++++++++++
 
 
 
-#define PT_PKT_GENERIC_LEN      2
-#define PT_PKT_GENERIC_BYTE0    0b00000010
+#define PT_PKT_GENERIC_LEN		2
+#define PT_PKT_GENERIC_BYTE0	0b00000010
 
-#define PT_PKT_LTNT_LEN         8
-#define PT_PKT_LTNT_BYTE0       PT_PKT_GENERIC_BYTE0
-#define PT_PKT_LTNT_BYTE1       0b10100011
+#define PT_PKT_LTNT_LEN			8
+#define PT_PKT_LTNT_BYTE0		PT_PKT_GENERIC_BYTE0
+#define PT_PKT_LTNT_BYTE1		0b10100011
 
-#define PT_PKT_PIP_LEN          8
-#define PT_PKT_PIP_BYTE0        PT_PKT_GENERIC_BYTE0
-#define PT_PKT_PIP_BYTE1        0b01000011
+#define PT_PKT_PIP_LEN			8
+#define PT_PKT_PIP_BYTE0		PT_PKT_GENERIC_BYTE0
+#define PT_PKT_PIP_BYTE1		0b01000011
 
-#define PT_PKT_CBR_LEN          4
-#define PT_PKT_CBR_BYTE0        PT_PKT_GENERIC_BYTE0
-#define PT_PKT_CBR_BYTE1        0b00000011
+#define PT_PKT_CBR_LEN			4
+#define PT_PKT_CBR_BYTE0		PT_PKT_GENERIC_BYTE0
+#define PT_PKT_CBR_BYTE1		0b00000011
 
-#define PT_PKT_OVF_LEN          8
-#define PT_PKT_OVF_BYTE0        PT_PKT_GENERIC_BYTE0
-#define PT_PKT_OVF_BYTE1        0b11110011
+#define PT_PKT_OVF_LEN			8
+#define PT_PKT_OVF_BYTE0		PT_PKT_GENERIC_BYTE0
+#define PT_PKT_OVF_BYTE1		0b11110011
 
-#define PT_PKT_PSB_LEN          16
-#define PT_PKT_PSB_BYTE0        PT_PKT_GENERIC_BYTE0
-#define PT_PKT_PSB_BYTE1        0b10000010
+#define PT_PKT_PSB_LEN			16
+#define PT_PKT_PSB_BYTE0		PT_PKT_GENERIC_BYTE0
+#define PT_PKT_PSB_BYTE1		0b10000010
 
-#define PT_PKT_PSBEND_LEN       2
-#define PT_PKT_PSBEND_BYTE0     PT_PKT_GENERIC_BYTE0
-#define PT_PKT_PSBEND_BYTE1     0b00100011
+#define PT_PKT_PSBEND_LEN		2
+#define PT_PKT_PSBEND_BYTE0		PT_PKT_GENERIC_BYTE0
+#define PT_PKT_PSBEND_BYTE1		0b00100011
 
-#define PT_PKT_MNT_LEN          11
-#define PT_PKT_MNT_BYTE0        PT_PKT_GENERIC_BYTE0
-#define PT_PKT_MNT_BYTE1        0b11000011
-#define PT_PKT_MNT_BYTE2        0b10001000
+#define PT_PKT_MNT_LEN			11
+#define PT_PKT_MNT_BYTE0		PT_PKT_GENERIC_BYTE0
+#define PT_PKT_MNT_BYTE1		0b11000011
+#define PT_PKT_MNT_BYTE2		0b10001000
 
-#define PT_PKT_TMA_LEN          7
-#define PT_PKT_TMA_BYTE0        PT_PKT_GENERIC_BYTE0
-#define PT_PKT_TMA_BYTE1        0b01110011
+#define PT_PKT_TMA_LEN			7
+#define PT_PKT_TMA_BYTE0		PT_PKT_GENERIC_BYTE0
+#define PT_PKT_TMA_BYTE1		0b01110011
 
-#define PT_PKT_VMCS_LEN         7
-#define PT_PKT_VMCS_BYTE0       PT_PKT_GENERIC_BYTE0
-#define PT_PKT_VMCS_BYTE1       0b11001000
+#define PT_PKT_VMCS_LEN			7
+#define PT_PKT_VMCS_BYTE0		PT_PKT_GENERIC_BYTE0
+#define PT_PKT_VMCS_BYTE1		0b11001000
 
-#define PT_PKT_TS_LEN           2
-#define PT_PKT_TS_BYTE0         PT_PKT_GENERIC_BYTE0
-#define PT_PKT_TS_BYTE1         0b10000011
+#define	PT_PKT_TS_LEN			2
+#define PT_PKT_TS_BYTE0			PT_PKT_GENERIC_BYTE0
+#define PT_PKT_TS_BYTE1			0b10000011
 
-#define PT_PKT_MODE_LEN         2
-#define PT_PKT_MODE_BYTE0       0b10011001
+#define PT_PKT_MODE_LEN			2
+#define PT_PKT_MODE_BYTE0		0b10011001
 
-#define PT_PKT_TIP_LEN          8
-#define PT_PKT_TIP_SHIFT        5
-#define PT_PKT_TIP_MASK         0b00011111
-#define PT_PKT_TIP_BYTE0        0b00001101
-#define PT_PKT_TIP_PGE_BYTE0    0b00010001
-#define PT_PKT_TIP_PGD_BYTE0    0b00000001
-#define PT_PKT_TIP_FUP_BYTE0    0b00011101
+#define PT_PKT_TIP_LEN			8
+#define PT_PKT_TIP_SHIFT		5
+#define PT_PKT_TIP_MASK			0b00011111
+#define PT_PKT_TIP_BYTE0		0b00001101
+#define PT_PKT_TIP_PGE_BYTE0	0b00010001
+#define PT_PKT_TIP_PGD_BYTE0	0b00000001
+#define PT_PKT_TIP_FUP_BYTE0	0b00011101
 
 typedef struct {
     uint64_t newBBCnt;
@@ -157,15 +160,18 @@ typedef enum {
 }dynFileMethod_t;
 
 typedef struct decoder_s{
-    uint64_t min_addr;
-    uint64_t max_addr;
-    void (*handler)(uint64_t, run_t*);
-    uint64_t last_tip;
-    uint64_t last_ip2;
-    bool fup_pkt;
-    bool isr;
-    bool in_range;
-    bool pge_enabled;
+	uint8_t* code;
+	uint64_t min_addr;
+	uint64_t max_addr;
+	void (*handler)(uint64_t);
+	uint64_t last_tip;
+	uint64_t last_ip2;
+	bool fup_pkt;
+	bool isr;
+	bool in_range;
+	bool pge_enabled;
+	disassembler_t* disassembler_state;
+    tnt_cache_t* tnt_cache_state;
 } decoder_t;
 
 
@@ -179,12 +185,14 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd);
 bool perf_reap(run_t* run);
 bool perf_mmap_parse(run_t* run);
 bool perf_mmap_reset(run_t* run);
-void pt_bitmap(uint64_t addr, run_t* run);
+void pt_bitmap(uint64_t addr);
 bool pt_analyze(run_t* run);
-decoder_t* pt_decoder_init(uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t, run_t*));
+decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t));
 void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run);
 void pt_decoder_destroy(decoder_t* self);
 void pt_decoder_flush(decoder_t* self);
 void print_bitmap();
+uint8_t* get_trace_bits();
+bool get_addr_cle();
 
 #endif

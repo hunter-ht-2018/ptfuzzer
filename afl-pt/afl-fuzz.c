@@ -2396,7 +2396,10 @@ static u8 run_target(char** argv, u32 timeout) {
         exit(1);
       }
 
-      memcpy(trace_bits, get_trace_bits(), MAP_SIZE);
+      uint8_t * pt_trace_bits;
+      pt_trace_bits = get_trace_bits();
+
+      memcpy(trace_bits, pt_trace_bits, MAP_SIZE);
       
       // if(waitpid(child_pid, &status, 0) <= 0)
       // {
