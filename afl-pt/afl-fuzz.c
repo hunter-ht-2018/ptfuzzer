@@ -2284,7 +2284,7 @@ static u8 run_target(char** argv, u32 timeout) {
      territory. */
 
   memset(trace_bits, 0, MAP_SIZE);
-  MEM_BARRIER();
+  //MEM_BARRIER();
 
   /* If we're running in "dumb" mode, we can't rely on the fork server
      logic compiled into the target program, so we will just keep calling
@@ -2294,6 +2294,8 @@ static u8 run_target(char** argv, u32 timeout) {
 
   if (dumb_mode == 1 || no_forkserver) {
 
+      // printf("%s\n", argv);
+      // printf("%s\n", target_path);
 
 
 
@@ -2364,6 +2366,7 @@ static u8 run_target(char** argv, u32 timeout) {
                              "symbolize=0:"
                              "msan_track_origins=0", 0);
 
+      //sleep(10);
       execv(target_path, argv);
       //sleep(1);
       //printf("%s\n", argv);
@@ -2385,6 +2388,15 @@ static u8 run_target(char** argv, u32 timeout) {
         printf("Config failed\n");
         exit(1);
       }
+      if (waitpid(child_pid, &status, 0) <= 0) PFATAL("waitpid() failed");
+
+      if(perf_reap(&run) == false)
+      {
+        printf("Analyze pt failed\n");
+        exit(1);
+      }
+
+      memcpy(trace_bits, get_trace_bits(), MAP_SIZE);
       
       // if(waitpid(child_pid, &status, 0) <= 0)
       // {
@@ -2433,16 +2445,10 @@ static u8 run_target(char** argv, u32 timeout) {
 
   if (dumb_mode == 1 || no_forkserver) {
 
-    if (waitpid(child_pid, &status, 0) <= 0) PFATAL("waitpid() failed");
+    
 
 
-    if(perf_reap(&run) == false)
-    {
-      printf("Analyze pt failed\n");
-      exit(1);
-    }
-
-    memcpy(trace_bits, get_trace_bits(), MAP_SIZE);
+    
 
   } else {
 
@@ -2470,7 +2476,7 @@ static u8 run_target(char** argv, u32 timeout) {
      compiler below this point. Past this location, trace_bits[] behave
      very normally and do not have to be treated as volatile. */
 
-  MEM_BARRIER();
+  //MEM_BARRIER();
 
   tb4 = *(u32*)trace_bits;
 

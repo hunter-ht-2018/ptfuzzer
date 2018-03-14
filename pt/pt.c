@@ -492,14 +492,16 @@ static inline void vmcs_handler(decoder_t* self, uint8_t** p){
 
 static inline void print_unknown(unsigned char* p, unsigned char* end)
 {
-	printf("unknown packet: ");
+	//printf("unknown packet: ");
 	unsigned len = end - p;
 	int i;
 	if (len > 16)
 		len = 16;
 	for (i = 0; i < len; i++)
-		printf("%02x ", p[i]);
-	printf("\n");
+	{
+		//printf("%02x ", p[i]);
+	}
+	//printf("\n");
 }
 
 void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run){
@@ -678,12 +680,12 @@ bool pt_analyze(run_t* run) {
     while (!feof (pt_file)){
         count = fread (buf, sizeof(uint8_t), max_addr_cle - min_addr_cle, pt_file);
         int n = feof (pt_file);
-        printf ("%d,%d\n", count, n);
-        printf ("%s\n",strerror (errno));
+        //printf ("%d,%d\n", count, n);
+        //printf ("%s\n",strerror (errno));
     }
 
     fclose(pt_file);
-    printf("\n\n%s\n\n", buf);
+    //printf("\n\n%s\n\n", buf);
     
     self = pt_decoder_init(buf, min_addr_cle, max_addr_cle, &pt_bitmap);
     if(self == NULL)

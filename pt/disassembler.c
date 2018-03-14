@@ -410,15 +410,15 @@ bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tn
 				last_type = COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH;
 				//~ sample_decoded_detailed("(%d)\t%lx\n", COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH ,obj->cofi->ins_addr);
 				last_obj = obj;
-				if (out_of_bounds(self, obj->cofi->target_addr)){
-					if (!count_tnt(tnt_cache_state)){
-						return false;
-					}
-					obj = obj->cofi_ptr;
-				}
-				else {
+				// if (out_of_bounds(self, obj->cofi->target_addr)){
+				// 	if (!count_tnt(tnt_cache_state)){
+				// 		return false;
+				// 	}
+				// 	obj = obj->cofi_ptr;
+				// }
+				// else {
 					obj = get_obj(self, obj->cofi->target_addr, tnt_cache_state);
-				}
+				//}
 				/* loop */
 				if(obj && (last_obj->cofi->ins_addr == obj->cofi->ins_addr)){
 					return false;

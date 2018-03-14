@@ -28,10 +28,10 @@ int main()
 		printf("这是子进程,进程标识符是%d\n",getpid());
 		//执行ls
 		printf("execv\n");
-		sleep(2);
-		execv("/bin/ls", "-la");
-		printf("execv\n");
-		sleep(2);
+		//sleep(1);
+		execv("/home/johnny/ptfuzzer/readelf", "-a /home/johnny/ptfuzzer/afl-pt/ptest/in/small_exec.elf");
+		//printf("execv\n");
+		//sleep(1);
 		exit(0);
 	}
 	
@@ -56,7 +56,7 @@ int main()
 			printf("Analyze pt failed\n");
 			exit(1);
 		}
-		//~ print_bitmap();
+		print_bitmap();
 	}
 	
 	return 0;
