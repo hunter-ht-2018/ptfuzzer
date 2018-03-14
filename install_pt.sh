@@ -1,0 +1,11 @@
+
+cd build
+rm -rf ./*
+cmake ../
+make
+rm ../afl-pt/libpt.a
+cp pt/libpt.a ../afl-pt/
+
+cd ../afl-pt
+make clean
+make
