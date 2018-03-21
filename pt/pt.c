@@ -654,6 +654,7 @@ bool pt_analyze(run_t* run) {
 		return false;
 	}
     decode_buffer(run->decoder, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
+    free_list(run->decoder->disassembler_state->list_head);
     return true;
 }
 
