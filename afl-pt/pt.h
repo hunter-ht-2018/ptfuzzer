@@ -128,6 +128,21 @@ typedef struct {
     uint64_t newBBCnt;
 }hwcnt_t;
 
+typedef struct decoder_s{
+	uint8_t* code;
+	uint64_t min_addr;
+	uint64_t max_addr;
+	void (*handler)(uint64_t);
+	uint64_t last_tip;
+	uint64_t last_ip2;
+	bool fup_pkt;
+	bool isr;
+	bool in_range;
+	bool pge_enabled;
+	disassembler_t* disassembler_state;
+    tnt_cache_t* tnt_cache_state;
+} decoder_t;
+
 typedef struct {
     pid_t pid;
     pid_t persistentPid;
@@ -148,6 +163,8 @@ typedef struct {
         pid_t attachedPid;
         int cpuIptBtsFd;
     }linux_t;
+    
+    decoder_t* decoder;
 }run_t;
 
 typedef enum {
@@ -158,21 +175,6 @@ typedef enum {
     _HF_DYNFILE_IPT_BLOCK = 0x20,
     _HF_DYNFILE_SOFT = 0x40,
 }dynFileMethod_t;
-
-typedef struct decoder_s{
-	uint8_t* code;
-	uint64_t min_addr;
-	uint64_t max_addr;
-	void (*handler)(uint64_t);
-	uint64_t last_tip;
-	uint64_t last_ip2;
-	bool fup_pkt;
-	bool isr;
-	bool in_range;
-	bool pge_enabled;
-	disassembler_t* disassembler_state;
-    tnt_cache_t* tnt_cache_state;
-} decoder_t;
 
 
 bool perf_config(pid_t pid, run_t* run);
@@ -188,11 +190,11 @@ bool perf_mmap_reset(run_t* run);
 void pt_bitmap(uint64_t addr);
 bool pt_analyze(run_t* run);
 decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t));
+bool pt_decoder_reset(decoder_t* self);
 void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run);
 void pt_decoder_destroy(decoder_t* self);
 void pt_decoder_flush(decoder_t* self);
 void print_bitmap();
 uint8_t* get_trace_bits();
-bool get_addr_cle();
 
 #endif

@@ -51,6 +51,7 @@ typedef struct tnt_cache_s{
 } tnt_cache_t;
 
 tnt_cache_t* tnt_cache_init(void);
+bool tnt_cache_reset(tnt_cache_t* self);
 void tnt_cache_destroy(tnt_cache_t* self);
 
 bool is_empty_tnt_cache(tnt_cache_t* self);

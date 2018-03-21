@@ -86,7 +86,7 @@ run_t run = {
         .persistentPid = 0,
         .persistentSock = -1,
         .tmOutSignaled = false
-    };
+};
 
 
 
@@ -8010,8 +8010,72 @@ int main(int argc, char** argv) {
     printf("Initial perf failed\n");
     exit(1);
   }
+  
+  uint64_t min_addr_cle, max_addr_cle, entry_point_cle;
+  uint8_t* raw_bin_buf;
+  
+  //读取min_max.txt中的内容
+	min_addr_cle = 0ULL;
+	max_addr_cle = 0ULL;
+	entry_point_cle = 0ULL;
+	
+	FILE *fp;
+	int MAX_LINE_T = 1024;
+    char strLine[MAX_LINE_T];                             //读取缓冲区  
+    char* endptr;
+    if((fp = fopen("../min_max.txt","r")) == NULL)      //判断文件是否存在及可读  
+    {   
+        printf("Open  min_max.txt Falied!");
+        exit(1);
+    }
+    fgets(strLine,MAX_LINE_T,fp);
+    min_addr_cle = strtoull(strLine, &endptr, 10);
+    fgets(strLine,MAX_LINE_T,fp);
+    max_addr_cle = strtoull(strLine, &endptr, 10);
+    fgets(strLine,MAX_LINE_T,fp);
+    entry_point_cle = strtoull(strLine, &endptr, 10);
+    //~ printf("%lu %lu %lu\n", min_addr_cle, max_addr_cle, entry_point_cle);
+    fclose(fp);
+    
+	if(min_addr_cle == 0ULL || max_addr_cle == 0ULL || entry_point_cle == 0ULL)
+	{
+		printf("Error: min max addr = 0\n");
+		exit(1);
+	}
+  
+  
+	// read raw_bin from file
+    //将目标程序拷入buf
+    raw_bin_buf = malloc(max_addr_cle - min_addr_cle);
+    memset(raw_bin_buf, 0, max_addr_cle - min_addr_cle);
+    
+    FILE* pt_file = fopen("../raw_bin", "rb");
+    if(NULL == pt_file)
+    {
+        printf("Error:Open raw_bin.txt file fail!\n");
+        return false;
+    }
 
+    int count;
+    while (!feof (pt_file)){
+        count = fread (raw_bin_buf, sizeof(uint8_t), max_addr_cle - min_addr_cle, pt_file);
+        //~ int n = feof (pt_file);
+        //printf ("%d,%d\n", count, n);
+        //printf ("%s\n",strerror (errno));
+    }
 
+    fclose(pt_file);
+  
+  //init decoder and disassembler
+  decoder_t* self_decoder;
+    
+  self_decoder = pt_decoder_init(raw_bin_buf, min_addr_cle, max_addr_cle, &pt_bitmap);
+  if(self_decoder == NULL)
+	{
+		printf("Decoder struct init failed!\n");\
+		exit(1);
+	}
+  run.decoder = self_decoder;
 
 
   save_cmdline(argc, argv);
@@ -8142,6 +8206,7 @@ int main(int argc, char** argv) {
   write_bitmap();
   write_stats_file(0, 0, 0);
   save_auto();
+  pt_decoder_destroy(self_decoder);
 
 stop_fuzzing:
 

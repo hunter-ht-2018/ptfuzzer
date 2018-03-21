@@ -42,8 +42,6 @@ static uint8_t psb[16] = {
 };
 
 uint8_t* trace_bits;    
-uint64_t min_addr_cle, max_addr_cle, entry_point_cle;
-uint8_t* raw_bin_buf;
 
 ///////////////////////
 
@@ -88,54 +86,11 @@ ssize_t files_readFileToBufMax(char* fileName, uint8_t* buf, size_t fileMaxSz) {
     return readSz;
 }
 
-bool get_addr_cle()
-{
-	FILE *fp;   
-	int MAX_LINE = 1024;
-    char strLine[MAX_LINE];                             //读取缓冲区  
-    char* endptr;
-    if((fp = fopen("../min_max.txt","r")) == NULL)      //判断文件是否存在及可读  
-    {   
-        printf("Open Falied!");   
-        return false;   
-    } 
-    
-    fgets(strLine,MAX_LINE,fp);
-    min_addr_cle = strtoull(strLine, &endptr, 10);
-    fgets(strLine,MAX_LINE,fp);
-    max_addr_cle = strtoull(strLine, &endptr, 10);
-    fgets(strLine,MAX_LINE,fp);
-    entry_point_cle = strtoull(strLine, &endptr, 10);
-    //~ printf("%lu %lu %lu\n", min_addr_cle, max_addr_cle, entry_point_cle);
-    fclose(fp);
-    return true;
-}
-
 bool perf_init() {
 	//AFL里面有无malloc？
 	trace_bits = malloc(MAP_SIZE * sizeof(uint8_t));
 	if(trace_bits == NULL)
 	{
-		return false;
-	}
-
-	// init disassembler_t->map
-
-
-
-	//读取min_max.txt中的内容
-	    
-	min_addr_cle = 0ULL;
-	max_addr_cle = 0ULL;
-	entry_point_cle = 0ULL;
-	
-	if(get_addr_cle() == false)
-	{
-		return false;
-	}
-	if(min_addr_cle == 0ULL || max_addr_cle == 0ULL || entry_point_cle == 0ULL)
-	{
-		printf("Error: addr = 0\n");
 		return false;
 	}
 	
@@ -147,32 +102,6 @@ bool perf_init() {
         perfIntelPtPerfType = (int32_t)strtoul((char*)buf, NULL, 10);
     }
     else return false;
-
-    // read raw_bin from file
-    raw_bin_buf = malloc(max_addr_cle - min_addr_cle);
-    memset(raw_bin_buf, 0, max_addr_cle - min_addr_cle);
-    
-    //将目标程序拷入buf
-    FILE* pt_file = fopen("../raw_bin", "rb");
-    if(NULL == pt_file)
-    {
-        printf("Error:Open raw_bin.txt file fail!\n");
-        return false;
-    }
-
-    int count;
-    while (!feof (pt_file)){
-        count = fread (raw_bin_buf, sizeof(uint8_t), max_addr_cle - min_addr_cle, pt_file);
-        int n = feof (pt_file);
-        //printf ("%d,%d\n", count, n);
-        //printf ("%s\n",strerror (errno));
-    }
-
-    fclose(pt_file);
-    //printf("\n\n%s\n\n", raw_bin_buf);
-    
-			//init_map();
-
 
     return true;
 }
@@ -691,25 +620,40 @@ void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run){
 #define ATOMIC_GET(x) __atomic_load_n(&(x), __ATOMIC_SEQ_CST)
 #define ATOMIC_SET(x, y) __atomic_store_n(&(x), y, __ATOMIC_SEQ_CST)
 
+bool pt_decoder_reset(decoder_t* self)
+{
+	self->last_tip = 0;
+	self->last_ip2 = 0;
+	self->fup_pkt = false;
+	self->isr = false;
+	self->in_range = false;
+	
+	if(reset_disassembler(self->disassembler_state) == false)
+	{
+		printf("Reset disassembler failed!\n");
+		return false;
+	}
+    if(tnt_cache_reset(self->tnt_cache_state) == false)
+    {
+		printf("Reset tnt cache failed!\n");
+		return false;
+	}
+    
+    return true;
+}
+
 bool pt_analyze(run_t* run) {
-
-
 
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux_t.perfMmapBuf;
     uint64_t aux_tail = ATOMIC_GET(pem->aux_tail);
     uint64_t aux_head = ATOMIC_GET(pem->aux_head);
 
-    decoder_t* self;
-
-    
-
-    
-    self = pt_decoder_init(raw_bin_buf, min_addr_cle, max_addr_cle, &pt_bitmap);
-    if(self == NULL)
+	if(pt_decoder_reset(run->decoder) == false)
+	{
+		printf("PT decoder reset failed!\n");
 		return false;
-    decode_buffer(self, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
-    pt_decoder_destroy(self);
-    //free(raw_bin_buf);
+	}
+    decode_buffer(run->decoder, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
     return true;
 }
 
