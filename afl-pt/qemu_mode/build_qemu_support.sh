@@ -56,7 +56,7 @@ if [ ! -f "../afl-showmap" ]; then
 fi
 
 
-for i in libtool wget python automake autoconf sha384sum bison iconv; do
+for i in wget python automake autoconf sha384sum bison iconv; do
 
   T=`which "$i" 2>/dev/null`
 

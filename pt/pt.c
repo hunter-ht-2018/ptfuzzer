@@ -43,6 +43,8 @@ static uint8_t psb[16] = {
 
 uint8_t* trace_bits;    
 uint64_t min_addr_cle, max_addr_cle, entry_point_cle;
+uint8_t* raw_bin_buf;
+
 ///////////////////////
 
 
@@ -116,7 +118,11 @@ bool perf_init() {
 	{
 		return false;
 	}
-	
+
+	// init disassembler_t->map
+
+
+
 	//读取min_max.txt中的内容
 	    
 	min_addr_cle = 0ULL;
@@ -141,6 +147,32 @@ bool perf_init() {
         perfIntelPtPerfType = (int32_t)strtoul((char*)buf, NULL, 10);
     }
     else return false;
+
+    // read raw_bin from file
+    raw_bin_buf = malloc(max_addr_cle - min_addr_cle);
+    memset(raw_bin_buf, 0, max_addr_cle - min_addr_cle);
+    
+    //将目标程序拷入buf
+    FILE* pt_file = fopen("../raw_bin", "rb");
+    if(NULL == pt_file)
+    {
+        printf("Error:Open raw_bin.txt file fail!\n");
+        return false;
+    }
+
+    int count;
+    while (!feof (pt_file)){
+        count = fread (raw_bin_buf, sizeof(uint8_t), max_addr_cle - min_addr_cle, pt_file);
+        int n = feof (pt_file);
+        //printf ("%d,%d\n", count, n);
+        //printf ("%s\n",strerror (errno));
+    }
+
+    fclose(pt_file);
+    //printf("\n\n%s\n\n", raw_bin_buf);
+    
+			//init_map();
+
 
     return true;
 }
@@ -288,6 +320,8 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
 
 bool perf_config(pid_t pid, run_t* run)
 {
+
+
 	last_ip = 0ULL;
 	perf_close(run);
 	if (perf_open(pid, run) == false) {
@@ -659,40 +693,23 @@ void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run){
 
 bool pt_analyze(run_t* run) {
 
+
+
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux_t.perfMmapBuf;
     uint64_t aux_tail = ATOMIC_GET(pem->aux_tail);
     uint64_t aux_head = ATOMIC_GET(pem->aux_head);
 
     decoder_t* self;
-    uint8_t* buf;
-    buf = malloc(max_addr_cle - min_addr_cle);
-    memset(buf, 0, max_addr_cle - min_addr_cle);
-    
-    //将目标程序拷入buf
-    FILE* pt_file = fopen("../raw_bin", "rb");
-    if(NULL == pt_file)
-    {
-        printf("Error:Open raw_bin.txt file fail!\n");
-        return false;
-    }
-    
-    int count;
-    while (!feof (pt_file)){
-        count = fread (buf, sizeof(uint8_t), max_addr_cle - min_addr_cle, pt_file);
-        int n = feof (pt_file);
-        //printf ("%d,%d\n", count, n);
-        //printf ("%s\n",strerror (errno));
-    }
 
-    fclose(pt_file);
-    //printf("\n\n%s\n\n", buf);
     
-    self = pt_decoder_init(buf, min_addr_cle, max_addr_cle, &pt_bitmap);
+
+    
+    self = pt_decoder_init(raw_bin_buf, min_addr_cle, max_addr_cle, &pt_bitmap);
     if(self == NULL)
 		return false;
     decode_buffer(self, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
     pt_decoder_destroy(self);
-    free(buf);
+    //free(raw_bin_buf);
     return true;
 }
 

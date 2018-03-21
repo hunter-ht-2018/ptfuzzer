@@ -328,6 +328,14 @@ static cofi_list* analyse_assembly(disassembler_t* self, uint64_t base_address){
 	cs_close(&handle);
 	return first;
 }
+disassembler_t* glb;
+void init_map()
+{
+
+	glb = malloc(sizeof(disassembler_t));
+	glb->map = kh_init(ADDR0);
+
+}
 
 disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t)){
 	disassembler_t* res = malloc(sizeof(disassembler_t));
@@ -336,6 +344,7 @@ disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max
 	res->max_addr = max_addr;
 	res->handler = handler;
 	res->debug = false;
+	//res->map = glb->map;
 	res->map = kh_init(ADDR0);
 	res->list_head = create_list_head();
 	res->list_element = res->list_head;

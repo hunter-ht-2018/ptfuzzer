@@ -11,4 +11,8 @@ echo performance | tee cpu*/cpufreq/scaling_governor
 #使用以下命令进行fuzz
 
 cd afl-pt
-sudo ./afl-fuzz -t 999999 -i ./ptest/in -o ./ptest/out ./ptest/readelf -a @@ 
+sudo ./afl-fuzz  -t 999999 -i ./ptest/in -o ./ptest/out ./ptest/readelf -a @@ 
+
+
+
+sudo ./afl-fuzz -Q -t 999999 -i ./qtest/in -o ./qtest/out ./qtest/readelf -a @@ 
