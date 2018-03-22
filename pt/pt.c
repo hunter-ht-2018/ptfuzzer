@@ -654,6 +654,8 @@ bool pt_analyze(run_t* run) {
 	//	return false;
 	//}
     decode_buffer(run->decoder, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
+    tnt_cache_destroy(run->decoder->tnt_cache_state);
+    run->decoder->tnt_cache_state = tnt_cache_init();
     //free(run->decoder->disassembler_state->list_head);
     //free(run->decoder->disassembler_state->list_element);
     //free_list(run->decoder->disassembler_state->list_head);
