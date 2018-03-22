@@ -141,7 +141,7 @@ static cofi_list* create_list_head(void){
 }
 
 
-static void free_list(cofi_list* head){
+void free_list(cofi_list* head){
 	cofi_list *tmp1, *tmp2;
 	tmp1 = head;
 	while (1){

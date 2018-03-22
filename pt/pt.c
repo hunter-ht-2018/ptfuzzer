@@ -648,13 +648,15 @@ bool pt_analyze(run_t* run) {
     uint64_t aux_tail = ATOMIC_GET(pem->aux_tail);
     uint64_t aux_head = ATOMIC_GET(pem->aux_head);
 
-	if(pt_decoder_reset(run->decoder) == false)
-	{
-		printf("PT decoder reset failed!\n");
-		return false;
-	}
+	//if(pt_decoder_reset(run->decoder) == false)
+	//{
+	//	printf("PT decoder reset failed!\n");
+	//	return false;
+	//}
     decode_buffer(run->decoder, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
-    free_list(run->decoder->disassembler_state->list_head);
+    //free(run->decoder->disassembler_state->list_head);
+    //free(run->decoder->disassembler_state->list_element);
+    //free_list(run->decoder->disassembler_state->list_head);
     return true;
 }
 
