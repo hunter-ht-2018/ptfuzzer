@@ -181,27 +181,40 @@ static void edit_cofi_ptr(cofi_list* element, cofi_list* target){
 
 static void map_put(disassembler_t* self, uint64_t addr, uint64_t ref){
 	int ret;
-	khiter_t k;
-	k = kh_put(ADDR0, self->map, addr, &ret); 
-	kh_value(self->map, k) = ref;
+	// khiter_t k;
+	// k = kh_put(ADDR0, self->map, addr, &ret); 
+	// kh_value(self->map, k) = ref;
+
+	//printf("addr:%d - %d = %d \n", addr, self->min_addr, addr-self->min_addr);
+
+	self->map[addr-self->min_addr] = ref;
+
 }
 
 static int map_exist(disassembler_t* self, uint64_t addr){
-	khiter_t k;
-	k = kh_get(ADDR0, self->map, addr); 
-	if(k != kh_end(self->map)){
+	// khiter_t k;
+	// k = kh_get(ADDR0, self->map, addr); 
+	// if(k != kh_end(self->map)){
+	// 	return 1;
+	// }
+	if(self->map[addr-self->min_addr])
 		return 1;
-	}
 	return 0;
 }
 
 static int map_get(disassembler_t* self, uint64_t addr, uint64_t* ref){
-	khiter_t k;
-	k = kh_get(ADDR0, self->map, addr); 
-	if(k != kh_end(self->map)){
-		*ref = kh_value(self->map, k); 
+	// khiter_t k;
+	// k = kh_get(ADDR0, self->map, addr); 
+	// if(k != kh_end(self->map)){
+	// 	*ref = kh_value(self->map, k); 
+	// 	return 0;
+	// } 
+
+	if(self->map[addr-self->min_addr])
+	{
+		*ref = self->map[addr-self->min_addr];
 		return 0;
-	} 
+	}
 	return 1;
 }
 
@@ -339,7 +352,9 @@ disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max
 	res->handler = handler;
 	res->debug = false;
 	//res->map = glb->map;
-	res->map = kh_init(ADDR0);
+	//res->map = kh_init(ADDR0);
+	res->map = malloc((max_addr-min_addr)*sizeof(uint64_t));
+	memset(res->map, 0, sizeof(res->map));
 	res->list_head = create_list_head();
 	res->list_element = res->list_head;
 	return res;
@@ -352,7 +367,8 @@ bool reset_disassembler(disassembler_t* res){
 }
 
 void destroy_disassembler(disassembler_t* self){
-	kh_destroy(ADDR0, self->map);
+	//kh_destroy(ADDR0, self->map);
+	free(self->map);
 	free_list(self->list_head);
 	free(self);
 }
