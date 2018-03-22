@@ -357,6 +357,9 @@ disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max
 	memset(res->map, 0, (max_addr-min_addr)*sizeof(uint64_t));
 	res->list_head = create_list_head();
 	res->list_element = res->list_head;
+
+	analyse_assembly(res, res->min_addr);
+
 	return res;
 }
 
