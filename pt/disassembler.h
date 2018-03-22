@@ -72,7 +72,8 @@ typedef struct disassembler_s{
 	uint64_t min_addr;
 	uint64_t max_addr;
 	void (*handler)(uint64_t);
-	khash_t(ADDR0) *map;
+	//khash_t(ADDR0) *map;
+	uint64_t *map;
 	cofi_list* list_head;
 	cofi_list* list_element;
 	bool debug;
