@@ -677,11 +677,11 @@ bool perf_mmap_parse(run_t* run) {
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux_t.perfMmapBuf;
     if (pem->aux_head == pem->aux_tail) {
         printf("The aux_head == aux_tail\n");
-        return false;
+        //return false;
     }
     if (pem->aux_head < pem->aux_tail) {
         printf("The PERF AUX data has been overwritten. The AUX buffer is too small\n");
-        return false;
+        //return false;
     }
     if (_HF_DYNFILE_IPT_BLOCK) {
         if(pt_analyze(run) == false)
