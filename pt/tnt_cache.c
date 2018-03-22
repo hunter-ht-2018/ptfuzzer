@@ -141,11 +141,9 @@ tnt_cache_t* tnt_cache_init(void){
 	return res;
 }
 
-bool tnt_cache_reset(tnt_cache_t* res){
-	res->head = NULL;
-	res->next_node = NULL;
-	res->counter = 0;
-	return true;
+tnt_cache_t* tnt_cache_reset(tnt_cache_t* res){
+	tnt_cache_destroy(res);
+    return tnt_cache_init();
 }
 
 void tnt_cache_destroy(tnt_cache_t* self){

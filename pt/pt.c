@@ -647,18 +647,15 @@ bool pt_analyze(run_t* run) {
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)run->linux_t.perfMmapBuf;
     uint64_t aux_tail = ATOMIC_GET(pem->aux_tail);
     uint64_t aux_head = ATOMIC_GET(pem->aux_head);
-
-	//if(pt_decoder_reset(run->decoder) == false)
-	//{
-	//	printf("PT decoder reset failed!\n");
-	//	return false;
-	//}
+    
     decode_buffer(run->decoder, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
-    tnt_cache_destroy(run->decoder->tnt_cache_state);
-    run->decoder->tnt_cache_state = tnt_cache_init();
-    //free(run->decoder->disassembler_state->list_head);
-    //free(run->decoder->disassembler_state->list_element);
-    //free_list(run->decoder->disassembler_state->list_head);
+    //free and reset the tnt cache memory
+    run->decoder->tnt_cache_state = tnt_cache_reset(run->decoder->tnt_cache_state);
+    if(run->decoder->tnt_cache_state == NULL)
+    {
+		printf("Free and reset tnt cache failed!\n");
+		return false;
+	}
     return true;
 }
 
