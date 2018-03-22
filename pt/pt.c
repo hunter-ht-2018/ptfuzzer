@@ -620,7 +620,7 @@ void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run){
 #define ATOMIC_GET(x) __atomic_load_n(&(x), __ATOMIC_SEQ_CST)
 #define ATOMIC_SET(x, y) __atomic_store_n(&(x), y, __ATOMIC_SEQ_CST)
 
-bool pt_decoder_reset(decoder_t* self)
+tnt_cache_t* pt_decoder_reset(decoder_t* self)
 {
 	self->last_tip = 0;
 	self->last_ip2 = 0;
@@ -628,18 +628,7 @@ bool pt_decoder_reset(decoder_t* self)
 	self->isr = false;
 	self->in_range = false;
 	
-	if(reset_disassembler(self->disassembler_state) == false)
-	{
-		printf("Reset disassembler failed!\n");
-		return false;
-	}
-    if(tnt_cache_reset(self->tnt_cache_state) == false)
-    {
-		printf("Reset tnt cache failed!\n");
-		return false;
-	}
-    
-    return true;
+    return tnt_cache_reset(self->tnt_cache_state);
 }
 
 bool pt_analyze(run_t* run) {
@@ -650,7 +639,7 @@ bool pt_analyze(run_t* run) {
     
     decode_buffer(run->decoder, run->linux_t.perfMmapAux, (aux_head -1 - aux_tail), run);
     //free and reset the tnt cache memory
-    run->decoder->tnt_cache_state = tnt_cache_reset(run->decoder->tnt_cache_state);
+    run->decoder->tnt_cache_state = pt_decoder_reset(run->decoder);
     if(run->decoder->tnt_cache_state == NULL)
     {
 		printf("Free and reset tnt cache failed!\n");

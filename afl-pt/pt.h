@@ -190,7 +190,7 @@ bool perf_mmap_reset(run_t* run);
 void pt_bitmap(uint64_t addr);
 bool pt_analyze(run_t* run);
 decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t));
-bool pt_decoder_reset(decoder_t* self);
+tnt_cache_t* pt_decoder_reset(decoder_t* self);
 void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run);
 void pt_decoder_destroy(decoder_t* self);
 void pt_decoder_flush(decoder_t* self);
