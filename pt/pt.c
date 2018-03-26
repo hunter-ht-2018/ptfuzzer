@@ -281,7 +281,7 @@ void pt_bitmap(uint64_t addr)
     last_ip = addr >> 1;
 }
 
-decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t)){
+decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point, void (*handler)(uint64_t)){
 	decoder_t* res = malloc(sizeof(decoder_t));
 	res->code = code;
 	res->min_addr = min_addr;
@@ -294,7 +294,7 @@ decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, 
 	res->isr = false;
 	res->in_range = false;
 	
-	res->disassembler_state = init_disassembler(code, min_addr, max_addr, handler);
+	res->disassembler_state = init_disassembler(code, min_addr, max_addr, entry_point, handler);
     res->tnt_cache_state = tnt_cache_init();
 	
 	return res;
@@ -627,6 +627,7 @@ tnt_cache_t* pt_decoder_reset(decoder_t* self)
 	self->fup_pkt = false;
 	self->isr = false;
 	self->in_range = false;
+	self->disassembler_state->is_decode = false;
 	
     return tnt_cache_reset(self->tnt_cache_state);
 }

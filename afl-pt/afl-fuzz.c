@@ -8084,7 +8084,7 @@ int main(int argc, char** argv) {
   }
   
   //init decoder and disassembler
-  run.decoder = pt_decoder_init(raw_bin_buf, min_addr_cle, max_addr_cle, &pt_bitmap);
+  run.decoder = pt_decoder_init(raw_bin_buf, min_addr_cle, max_addr_cle, entry_point_cle, &pt_bitmap);
   if(run.decoder == NULL)
   {
 		printf("Decoder struct init failed!\n");\

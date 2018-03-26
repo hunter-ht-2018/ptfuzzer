@@ -131,7 +131,8 @@ typedef struct {
 typedef struct decoder_s{
 	uint8_t* code;
 	uint64_t min_addr;
-	uint64_t max_addr;
+    uint64_t max_addr;
+	uint64_t entry_point;
 	void (*handler)(uint64_t);
 	uint64_t last_tip;
 	uint64_t last_ip2;
@@ -141,6 +142,8 @@ typedef struct decoder_s{
 	bool pge_enabled;
 	disassembler_t* disassembler_state;
     tnt_cache_t* tnt_cache_state;
+    bool is_decode;
+
 } decoder_t;
 
 typedef struct {
@@ -189,7 +192,7 @@ bool perf_mmap_parse(run_t* run);
 bool perf_mmap_reset(run_t* run);
 void pt_bitmap(uint64_t addr);
 bool pt_analyze(run_t* run);
-decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t));
+decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point, void (*handler)(uint64_t));
 tnt_cache_t* pt_decoder_reset(decoder_t* self);
 void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run);
 void pt_decoder_destroy(decoder_t* self);

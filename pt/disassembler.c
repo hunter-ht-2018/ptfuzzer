@@ -344,13 +344,15 @@ static cofi_list* analyse_assembly(disassembler_t* self, uint64_t base_address){
 }
 
 
-disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t)){
+disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point, void (*handler)(uint64_t)){
 	disassembler_t* res = malloc(sizeof(disassembler_t));
 	res->code = code;
 	res->min_addr = min_addr;
 	res->max_addr = max_addr;
+	res->entry_point = entry_point;
 	res->handler = handler;
 	res->debug = false;
+	res->is_decode = false;
 	//res->map = glb->map;
 	//res->map = kh_init(ADDR0);
 	res->map = malloc((max_addr-min_addr)*sizeof(uint64_t));
@@ -389,6 +391,7 @@ static inline cofi_list* get_obj(disassembler_t* self, uint64_t entry_point, tnt
 	}
 	
 	if(map_get(self, entry_point, &tmp_list_element)){
+		printf("entry_point:%x\n", entry_point);
 		return analyse_assembly(self, entry_point);
 	}
 	return (cofi_list*)tmp_list_element;
@@ -399,7 +402,12 @@ bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tn
 	cofi_list *obj, *last_obj;
 	uint8_t tnt;
 	int last_type = -1;
-		
+	//printf("sum_entry_point:%x\n", entry_point);
+
+	if(entry_point == self->entry_point)
+		self->is_decode = true;
+	if(self->is_decode == false)
+		return false;
 	obj = get_obj(self, entry_point, tnt_cache_state);
 	while(true){		
 		
@@ -435,6 +443,7 @@ bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tn
 				break;
 
 			case COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH:
+				self->handler(obj->cofi->ins_addr);
 				last_type = COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH;
 				//~ sample_decoded_detailed("(%d)\t%lx\n", COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH ,obj->cofi->ins_addr);
 				last_obj = obj;
@@ -457,22 +466,22 @@ bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tn
 				last_type = COFI_TYPE_INDIRECT_BRANCH;
 				self->handler(obj->cofi->target_addr);
 				//~ sample_decoded_detailed("(2)\t%lx\n",obj->cofi->ins_addr);
-				return false;
 				obj = obj->cofi_ptr;
+				return false;
 				break;
 
 			case COFI_TYPE_NEAR_RET:
 				last_type = COFI_TYPE_NEAR_RET;
 				//~ sample_decoded_detailed("(3)\t%lx\n",obj->cofi->ins_addr);
-				return false;
 				obj = obj->cofi_ptr;
+				return false;
 				break;
 
 			case COFI_TYPE_FAR_TRANSFERS:
 				last_type = COFI_TYPE_FAR_TRANSFERS;
 				//~ sample_decoded_detailed("(4)\t%lx\n",obj->cofi->ins_addr);
-				return true;
 				obj = obj->cofi_ptr;
+				return true;
 				break;
 
 			case NO_COFI_TYPE:

@@ -71,15 +71,19 @@ typedef struct disassembler_s{
 	uint8_t* code;
 	uint64_t min_addr;
 	uint64_t max_addr;
+	uint64_t entry_point;
 	void (*handler)(uint64_t);
 	//khash_t(ADDR0) *map;
 	uint64_t *map;
 	cofi_list* list_head;
 	cofi_list* list_element;
 	bool debug;
+	bool is_decode;
+
+
 } disassembler_t;
 
-disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max_addr, void (*handler)(uint64_t));
+disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point, void (*handler)(uint64_t));
 bool reset_disassembler(disassembler_t* self);
 bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tnt_cache_t* tnt_cache_state);
 void destroy_disassembler(disassembler_t* self);
