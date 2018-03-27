@@ -7775,7 +7775,7 @@ bool read_min_max()
 	max_addr_cle = 0ULL;
 	entry_point_cle = 0ULL;
     
-    if((fp = fopen("../min_max.txt","r")) == NULL) 
+    if((fp = fopen("./min_max.txt","r")) == NULL) 
     {   
         return false;
     }
@@ -7797,7 +7797,7 @@ bool read_min_max()
 
 bool read_raw_bin()
 {
-	FILE* pt_file = fopen("../raw_bin", "rb");
+	FILE* pt_file = fopen("./raw_bin", "rb");
 	
 	raw_bin_buf = malloc(max_addr_cle - min_addr_cle);
     memset(raw_bin_buf, 0, max_addr_cle - min_addr_cle);
@@ -8059,7 +8059,18 @@ int main(int argc, char** argv) {
   if (getenv("AFL_LD_PRELOAD"))
     FATAL("Use AFL_PRELOAD instead of AFL_LD_PRELOAD");
 
+  //get .text from target binary
+  char * arg[3] = {0};
+  arg[0] = "/usr/bin/python2.7";
+  arg[1] = "./disassemble.py";
+  arg[2] = argv[optind];
 
+  child_pid = fork();
+
+  if(!child_pid)
+    execv("/usr/bin/python2.7", arg);
+  else
+    waitpid(child_pid, NULL, 0);
 
   //initial perf
 
@@ -8095,6 +8106,7 @@ int main(int argc, char** argv) {
   save_cmdline(argc, argv);
 
   fix_up_banner(argv[optind]);
+
 
   check_if_tty();
 

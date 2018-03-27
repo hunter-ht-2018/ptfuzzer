@@ -19,14 +19,14 @@ entry = ld.main_object.entry
 
 for i in ld.main_object.sections:
 	if i.name == ".text":
-		print i.vaddr, i.filesize
+		# print i.vaddr, i.filesize
 		min_addr = i.vaddr
 		max_addr = i.vaddr + i.filesize
 		raw_bytes = ld.memory.read_bytes(i.vaddr, i.filesize)
 		for byte in raw_bytes:
 			bin_code += byte
 
-print len(bin_code)
+# print len(bin_code)
 f.write(bin_code)
 f.close()
 

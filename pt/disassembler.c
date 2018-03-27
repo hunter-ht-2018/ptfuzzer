@@ -443,7 +443,7 @@ bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tn
 				break;
 
 			case COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH:
-				self->handler(obj->cofi->ins_addr);
+				//self->handler(obj->cofi->ins_addr);
 				last_type = COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH;
 				//~ sample_decoded_detailed("(%d)\t%lx\n", COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH ,obj->cofi->ins_addr);
 				last_obj = obj;
@@ -464,7 +464,7 @@ bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tn
 
 			case COFI_TYPE_INDIRECT_BRANCH:
 				last_type = COFI_TYPE_INDIRECT_BRANCH;
-				self->handler(obj->cofi->target_addr);
+				//self->handler(obj->cofi->target_addr);
 				//~ sample_decoded_detailed("(2)\t%lx\n",obj->cofi->ins_addr);
 				obj = obj->cofi_ptr;
 				return false;

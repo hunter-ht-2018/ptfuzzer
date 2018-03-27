@@ -1,32 +1,22 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+./afl-pt/
+./afl-pt/afl-analyze
+./afl-pt/afl-as
+./afl-pt/afl-clang
+./afl-pt/afl-clang++
+./afl-pt/afl-fuzz
+./afl-pt/afl-g++
+./afl-pt/afl-gcc
+./afl-pt/afl-gotcpu
+./afl-pt/afl-showmap
+./afl-pt/afl-tmin
+./afl-pt/as
+./afl-pt/disassembler.h
+./afl-pt/khash.h
+./afl-pt/min_max.txt
+./afl-pt/ptest/info.txt
+./afl-pt/qemu_mode/qemu-2.10.0.tar.xz
+./afl-pt/qtest/
+./afl-pt/raw_bin
+./afl-pt/tnt_cache.h
+./build/
+./dump.txt
