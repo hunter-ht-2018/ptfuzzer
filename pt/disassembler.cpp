@@ -130,7 +130,7 @@ uint8_t lookup_table_sizes[] = {
 /* ===== kAFL disassembler cofi list ===== */
 
 static cofi_list* create_list_head(void){
-	cofi_list* head = malloc(sizeof(cofi_list));
+	cofi_list* head = (cofi_list*)malloc(sizeof(cofi_list));
 	if (head != NULL){
 		head->list_ptr = NULL;
 		head->cofi_ptr = NULL;
@@ -255,7 +255,7 @@ static cofi_type opcode_analyzer(disassembler_t* self, cs_insn *ins){
 				printf("%lx (%d)\t%s\t%s\t\t", ins->address, i, ins->mnemonic, ins->op_str);
 				print_string_hex("      \t", ins->bytes, ins->size);
 #endif
-				return i;
+				return (cofi_type)i;
 				
 			}
 		}
@@ -297,7 +297,7 @@ static cofi_list* analyse_assembly(disassembler_t* self, uint64_t base_address){
 		}
 		
 		if (!last_nop){
-			tmp = malloc(sizeof(cofi_header));
+			tmp = (cofi_header*)malloc(sizeof(cofi_header));
 			tmp->type = NO_COFI_TYPE;
 			tmp->ins_addr = 0;
 			tmp->target_addr = 0;
@@ -345,7 +345,7 @@ static cofi_list* analyse_assembly(disassembler_t* self, uint64_t base_address){
 
 
 disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point, void (*handler)(uint64_t)){
-	disassembler_t* res = malloc(sizeof(disassembler_t));
+	disassembler_t* res = (disassembler_t*)malloc(sizeof(disassembler_t));
 	res->code = code;
 	res->min_addr = min_addr;
 	res->max_addr = max_addr;
@@ -355,7 +355,7 @@ disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max
 	res->is_decode = false;
 	//res->map = glb->map;
 	//res->map = kh_init(ADDR0);
-	res->map = malloc((max_addr-min_addr)*sizeof(uint64_t));
+	res->map = (uint64_t*)malloc((max_addr-min_addr)*sizeof(uint64_t));
 	memset(res->map, 0, (max_addr-min_addr)*sizeof(uint64_t));
 	res->list_head = create_list_head();
 	res->list_element = res->list_head;
@@ -569,7 +569,7 @@ uint32_t disassemble_binary(uint8_t* code, uint64_t base_address, uint64_t max_a
 		num_inst ++;
 
 		if(current_cofi == nullptr) {
-			current_cofi = malloc(sizeof(cofi_inst_t));
+			current_cofi =  new cofi_inst_t;
 		}
 		if(pre_cofi != nullptr) {
 			if(pre_cofi->next_cofi == nullptr) {
