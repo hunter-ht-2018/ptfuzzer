@@ -524,22 +524,7 @@ static cofi_type get_inst_type(cs_insn *ins){
 	return NO_COFI_TYPE;
 }
 
-typedef struct _cofi_inst_t {
-	uint64_t inst_addr;
-	uint64_t target_addr;
-	struct _cofi_inst_t* next_cofi;
-} cofi_inst_t;
 
-class my_cofi_map {
-	cofi_inst_t** map_data;
-	uint64_t base_address;
-public:
-	cofi_inst_t*& operator [](uint64_t addr) {
-		return map_data[addr-base_address];
-	}
-};
-
-typedef std::map<uint64_t, cofi_inst_t*> cofi_map_t;
 
 uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t max_address, cofi_map_t& cofi_map){
 	csh handle;
