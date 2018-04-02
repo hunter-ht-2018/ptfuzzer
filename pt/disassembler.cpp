@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
+#include <map>
 #include "disassembler.h"
 
 #define LOOKUP_TABLES		5
@@ -524,13 +524,24 @@ static cofi_type get_inst_type(cs_insn *ins){
 	return NO_COFI_TYPE;
 }
 
-typedef struct cofi_inst {
+typedef struct _cofi_inst_t {
 	uint64_t inst_addr;
 	uint64_t target_addr;
-	cofi_inst* next_cofi;
+	struct _cofi_inst_t* next_cofi;
+} cofi_inst_t;
+
+class my_cofi_map {
+	cofi_inst_t** map_data;
+	uint64_t base_address;
+public:
+	cofi_inst_t*& operator [](uint64_t addr) {
+		return map_data[addr-base_address];
+	}
 };
 
-static cofi_list* disassemble_binary(uint8_t* code, uint64_t base_address, uint64_t max_address){
+typedef std::map<uint64_t, cofi_inst_t*> cofi_map_t;
+
+uint32_t disassemble_binary(uint8_t* code, uint64_t base_address, uint64_t max_address, cofi_map_t& cofi_map){
 	csh handle;
 	cs_insn *insn;
 	cofi_type type;
@@ -546,8 +557,8 @@ static cofi_list* disassemble_binary(uint8_t* code, uint64_t base_address, uint6
 	cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 	insn = cs_malloc(handle);
 
-	cofi_inst* current_cofi = nullptr;
-	cofi_inst* pre_cofi = nullptr;
+	cofi_inst_t* current_cofi = nullptr;
+	cofi_inst_t* pre_cofi = nullptr;
 
 	while(cs_disasm_iter(handle, &code, &code_size, &address, insn)) {
 		if (insn->address > max_address){
@@ -558,7 +569,7 @@ static cofi_list* disassemble_binary(uint8_t* code, uint64_t base_address, uint6
 		num_inst ++;
 
 		if(current_cofi == nullptr) {
-			current_cofi = malloc(sizeof(cofi_inst));
+			current_cofi = malloc(sizeof(cofi_inst_t));
 		}
 		if(pre_cofi != nullptr) {
 			if(pre_cofi->next_cofi == nullptr) {
@@ -576,17 +587,16 @@ static cofi_list* disassemble_binary(uint8_t* code, uint64_t base_address, uint6
 				current_cofi->target_addr = 0;
 			}
 			current_cofi->next_cofi = nullptr;
-			map_put(tmp->ins_addr, (uint64_t)(current_cofi));
+			cofi_map[current_cofi->inst_addr] = current_cofi;
 			pre_cofi = current_cofi;
 			current_cofi = nullptr;
 		}
 		else {
-			//last_nop = true;
-			map_put(insn->address, current_cofi);
+			cofi_map[current_cofi->inst_addr] = current_cofi;
 		}
 	}
 
 	cs_free(insn, 1);
 	cs_close(&handle);
-	return first;
+	return num_cofi_inst;
 }
