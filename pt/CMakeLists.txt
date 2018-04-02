@@ -5,3 +5,7 @@ set(PT_SRC pt.c disassembler.c tnt_cache.c)
 add_library(pt STATIC ${PT_SRC})
 add_executable(test_pt test_pt.c)
 target_link_libraries(test_pt pt capstone)
+
+add_executable(test_disassemble test_disassemble.c)
+target_link_libraries(test_disassemble pt capstone)
+

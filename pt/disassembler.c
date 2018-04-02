@@ -197,7 +197,7 @@ static int map_exist(disassembler_t* self, uint64_t addr){
 	// if(k != kh_end(self->map)){
 	// 	return 1;
 	// }
-	if(self->map[addr-self->min_addr])
+	if(self->map[addr - self->min_addr])
 		return 1;
 	return 0;
 }
@@ -495,3 +495,98 @@ bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tn
 	}
 }
 
+
+static cofi_type get_inst_type(cs_insn *ins){
+	uint8_t i, j;
+	cs_x86 details = ins->detail->x86;
+
+	for (i = 0; i < LOOKUP_TABLES; i++){
+		for (j = 0; j < lookup_table_sizes[i]; j++){
+			if (ins->id == lookup_tables[i][j].opcode){
+
+				/* check MOD R/M */
+				if (lookup_tables[i][j].modrm != IGN_MOD_RM && lookup_tables[i][j].modrm != (details.modrm & MODRM_AND))
+						continue;
+
+				/* check opcode prefix byte */
+				if (lookup_tables[i][j].opcode_prefix != IGN_OPODE_PREFIX && lookup_tables[i][j].opcode_prefix != details.opcode[0])
+						continue;
+#ifdef DEBUG
+				/* found */
+				printf("%lx (%d)\t%s\t%s\t\t", ins->address, i, ins->mnemonic, ins->op_str);
+				print_string_hex("      \t", ins->bytes, ins->size);
+#endif
+				return i;
+
+			}
+		}
+	}
+	return NO_COFI_TYPE;
+}
+
+typedef struct cofi_inst {
+	uint64_t inst_addr;
+	uint64_t target_addr;
+	cofi_inst* next_cofi;
+};
+
+static cofi_list* disassemble_binary(uint8_t* code, uint64_t base_address, uint64_t max_address){
+	csh handle;
+	cs_insn *insn;
+	cofi_type type;
+	uint64_t num_inst = 0;
+	uint64_t num_cofi_inst = 0;
+
+	size_t code_size = max_address - base_address;
+	uint64_t address = base_address;
+
+	if (cs_open(CS_ARCH_X86, CS_MODE_64, &handle) != CS_ERR_OK)
+		return false;
+
+	cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+	insn = cs_malloc(handle);
+
+	cofi_inst* current_cofi = nullptr;
+	cofi_inst* pre_cofi = nullptr;
+
+	while(cs_disasm_iter(handle, &code, &code_size, &address, insn)) {
+		if (insn->address > max_address){
+			break;
+		}
+
+		type = get_inst_type(insn);
+		num_inst ++;
+
+		if(current_cofi == nullptr) {
+			current_cofi = malloc(sizeof(cofi_inst));
+		}
+		if(pre_cofi != nullptr) {
+			if(pre_cofi->next_cofi == nullptr) {
+				pre_cofi->next_cofi = current_cofi;
+			}
+		}
+
+		if (type != NO_COFI_TYPE){
+			num_cofi_inst ++;
+			current_cofi->inst_addr = insn->address;
+			if (type == COFI_TYPE_CONDITIONAL_BRANCH || type == COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH){
+				current_cofi->target_addr = hex_to_bin(insn->op_str);
+			}
+			else {
+				current_cofi->target_addr = 0;
+			}
+			current_cofi->next_cofi = nullptr;
+			map_put(tmp->ins_addr, (uint64_t)(current_cofi));
+			pre_cofi = current_cofi;
+			current_cofi = nullptr;
+		}
+		else {
+			//last_nop = true;
+			map_put(insn->address, current_cofi);
+		}
+	}
+
+	cs_free(insn, 1);
+	cs_close(&handle);
+	return first;
+}
