@@ -159,7 +159,7 @@ void free_list(cofi_list* head){
 
 static cofi_list* new_list_element(cofi_list* predecessor, cofi_header* cofi){
 	if(predecessor){
-		cofi_list* next = malloc(sizeof(cofi_list));
+		cofi_list* next = (cofi_list*)malloc(sizeof(cofi_list));
 		if (next){
 			predecessor->list_ptr = next;
 			next->list_ptr = NULL;
@@ -516,7 +516,7 @@ static cofi_type get_inst_type(cs_insn *ins){
 				printf("%lx (%d)\t%s\t%s\t\t", ins->address, i, ins->mnemonic, ins->op_str);
 				print_string_hex("      \t", ins->bytes, ins->size);
 #endif
-				return i;
+				return (cofi_type)i;
 
 			}
 		}
