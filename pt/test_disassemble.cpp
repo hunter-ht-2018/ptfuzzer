@@ -72,6 +72,11 @@ int main (int argc, char** argv) {
 	}
 	cofi_map_t cofi_map;
 	uint32_t num_cofi_inst = disassemble_binary(raw_bin_buf, min_addr_cle, max_addr_cle, cofi_map);
+	cofi_inst_t* head = cofi_map[min_addr_cle];
+	while(head != nullptr) {
+		std::cout << head->inst_addr << " -> " << head->target_addr << std::endl;
+		head = head->next_cofi
+	}
 	std::cout << "number of cofi inst: " << num_cofi_inst << std::endl;
 	return 0;
 }

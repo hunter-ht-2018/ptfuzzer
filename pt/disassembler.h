@@ -34,6 +34,7 @@ along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <map>
+#include <string>
 
 //~ #include "qemu/osdep.h"
 #include "khash.h"
@@ -85,10 +86,14 @@ typedef struct disassembler_s{
 
 } disassembler_t;
 
+//#define DEBUG_COFI_INST
 typedef struct _cofi_inst_t {
 	uint64_t inst_addr;
 	uint64_t target_addr;
 	struct _cofi_inst_t* next_cofi;
+#ifdef DEBUG_COFI_INST
+	std::string dis_inst;
+#endif
 } cofi_inst_t;
 
 class my_cofi_map {
