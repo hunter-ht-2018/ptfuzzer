@@ -1,14 +1,15 @@
-mkdir build 2> /dev/null
-cd build
-rm -rf ./*
-cmake ../
+# build libpt.a
+cd pt/
+rm CMakeCache.txt 2> /dev/null
+cmake .
 make
+
+# copy libpt.a and *.h to afl-pt/
 rm ../afl-pt/libpt.a
-cp pt/libpt.a ../afl-pt/
-#rm ../afl-pt/pt.h
-cp ../pt/*.h ../afl-pt/
+cp libpt.a ../afl-pt/
+cp *.h ../afl-pt/
 
-
+# rebuild afl-pt
 cd ../afl-pt
 make clean
 make

@@ -31,11 +31,22 @@ as usual.
 * **PTfuzzer.** We implement a prototype called PTfuzzer based on these insights. And our experiments show that PTfuzzer can deal with binary-only fuzzing quickly and accurately.
 
 ## How to install
+```shell
 cd ptfuzzer/
-
+sudo ./check_dep.sh
 ./install_pt.sh
-	
+```
 ## How to run
+
+You need to open the performance switch of the system everytime you reboot the system.
+```
+su
+echo core >/proc/sys/kernel/core_pattern
+cd /sys/devices/system/cpu
+echo performance | tee cpu*/cpufreq/scaling_governor
+```
+
+
 * Prepare a your own target program and initial seed files
 * cd ptfuzzer/afl-pt/
 * sudo ./afl-fuzz -i your/input/directory -o your/output/directory your/target/program -parameter @@
