@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <iostream>
 #include "disassembler.h"
 
 
@@ -20,7 +21,7 @@ bool read_min_max()
     max_addr_cle = 0ULL;
     entry_point_cle = 0ULL;
 
-    if((fp = fopen("../min_max.txt","r")) == NULL)
+    if((fp = fopen("./min_max.txt","r")) == NULL)
     {
         return false;
     }
@@ -42,7 +43,7 @@ bool read_min_max()
 
 bool read_raw_bin()
 {
-    FILE* pt_file = fopen("../raw_bin", "rb");
+    FILE* pt_file = fopen("./raw_bin", "rb");
 
     raw_bin_buf = (uint8_t*)malloc(max_addr_cle - min_addr_cle);
     memset(raw_bin_buf, 0, max_addr_cle - min_addr_cle);
@@ -62,9 +63,15 @@ bool read_raw_bin()
 }
 
 int main (int argc, char** argv) {
-	read_min_max();
-	read_raw_bin();
+	if(!read_min_max()){
+		std::cerr << "read min and max addr failed." << std::endl;
+	}
+	
+	if(!read_raw_bin()){
+		std::cerr << "read raw binary failed." << std::endl;
+	}
 	cofi_map_t cofi_map;
-	uint32_t num_cofi_inst = disassemble_binary(raw_bin_buf, entry_point_cle, max_addr_cle, cofi_map);
+	uint32_t num_cofi_inst = disassemble_binary(raw_bin_buf, min_addr_cle, max_addr_cle, cofi_map);
+	std::cout << "number of cofi inst: " << num_cofi_inst << std::endl;
 	return 0;
 }
