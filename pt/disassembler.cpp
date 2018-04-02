@@ -541,7 +541,7 @@ public:
 
 typedef std::map<uint64_t, cofi_inst_t*> cofi_map_t;
 
-uint32_t disassemble_binary(uint8_t* code, uint64_t base_address, uint64_t max_address, cofi_map_t& cofi_map){
+uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t max_address, cofi_map_t& cofi_map){
 	csh handle;
 	cs_insn *insn;
 	cofi_type type;
