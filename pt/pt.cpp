@@ -88,7 +88,7 @@ ssize_t files_readFileToBufMax(char* fileName, uint8_t* buf, size_t fileMaxSz) {
 
 bool perf_init() {
 	//AFL里面有无malloc？
-	trace_bits = malloc(MAP_SIZE * sizeof(uint8_t));
+	trace_bits = (uint8_t*)malloc(MAP_SIZE * sizeof(uint8_t));
 	if(trace_bits == NULL)
 	{
 		return false;
@@ -207,7 +207,7 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
     }
 #if defined(PERF_ATTR_SIZE_VER5)
     run->linux_t.perfMmapBuf =
-        mmap(NULL, _HF_PERF_MAP_SZ + getpagesize(), PROT_READ | PROT_WRITE, MAP_SHARED, *perfFd, 0);
+        (uint8_t*)mmap(NULL, _HF_PERF_MAP_SZ + getpagesize(), PROT_READ | PROT_WRITE, MAP_SHARED, *perfFd, 0);
     if (run->linux_t.perfMmapBuf == MAP_FAILED) {
 		perror("ERROR: ");
         run->linux_t.perfMmapBuf = NULL;
@@ -228,7 +228,7 @@ bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd) {
     pem->aux_offset = pem->data_offset + pem->data_size;
     pem->aux_size = _HF_PERF_AUX_SZ;
     run->linux_t.perfMmapAux =
-        mmap(NULL, pem->aux_size, PROT_READ | PROT_WRITE, MAP_SHARED, *perfFd, pem->aux_offset);
+        (uint8_t*)mmap(NULL, pem->aux_size, PROT_READ | PROT_WRITE, MAP_SHARED, *perfFd, pem->aux_offset);
     if (run->linux_t.perfMmapAux == MAP_FAILED) {
         munmap(run->linux_t.perfMmapBuf, _HF_PERF_MAP_SZ + getpagesize());
         run->linux_t.perfMmapBuf = NULL;
@@ -282,7 +282,7 @@ void pt_bitmap(uint64_t addr)
 }
 
 decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point, void (*handler)(uint64_t)){
-	decoder_t* res = malloc(sizeof(decoder_t));
+	decoder_t* res = (decoder_t*)malloc(sizeof(decoder_t));
 	res->code = code;
 	res->min_addr = min_addr;
 	res->max_addr = max_addr;
@@ -473,7 +473,7 @@ void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run){
 	uint8_t byte0;
 
 	for (p = map; p < end; ) {
-		p = memmem(p, end - p, psb, PT_PKT_PSB_LEN);
+		p = (unsigned char *)memmem(p, end - p, psb, PT_PKT_PSB_LEN);
 		if (!p) {
 			p = end;
 			break;

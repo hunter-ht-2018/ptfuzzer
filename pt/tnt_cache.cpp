@@ -39,13 +39,13 @@ static inline uint8_t asm_bsr(uint64_t x){
 
 static void free_tnt_cache(tnt_cache_t* self){
 	tnt_cache_obj* tmp;
-	tnt_cache_obj* new;
+	tnt_cache_obj* new_tnt;
 	if(self->head){
-		new = self->head;
+		new_tnt = self->head;
 		tmp = NULL;
-		while(new){
-			tmp = new;
-			new = new->next;
+		while(new_tnt){
+			tmp = new_tnt;
+			new_tnt = new_tnt->next;
 			free(tmp);
 		}
 		self->head = NULL;
@@ -93,7 +93,7 @@ uint8_t process_tnt_cache(tnt_cache_t* self){
 
 
 void append_tnt_cache(tnt_cache_t* self, bool short_tnt, uint64_t data){
-	tnt_cache_obj* new;
+	tnt_cache_obj* new_tnt;
 	uint8_t bits;
 
 	if(short_tnt){
@@ -110,18 +110,18 @@ void append_tnt_cache(tnt_cache_t* self, bool short_tnt, uint64_t data){
 		return;
 	}
 	
-	new = malloc(sizeof(tnt_cache_obj));
-	new->bits = bits;
+	new_tnt = (tnt_cache_obj*)malloc(sizeof(tnt_cache_obj));
+	new_tnt->bits = bits;
 	if(self->next_node){
-		self->next_node->next = new;
+		self->next_node->next = new_tnt;
 	}
 	else{
-		self->head = new;
+		self->head = new_tnt;
 	}
-	new->processed = 0;
-	new->data = data;
-	new->next = NULL;
-	self->next_node = new;
+	new_tnt->processed = 0;
+	new_tnt->data = data;
+	new_tnt->next = NULL;
+	self->next_node = new_tnt;
 	self->counter += bits;
 }
 
@@ -134,7 +134,7 @@ int count_tnt(tnt_cache_t* self){
 }
 
 tnt_cache_t* tnt_cache_init(void){
-	tnt_cache_t* res = malloc(sizeof(tnt_cache_t));
+	tnt_cache_t* res = (tnt_cache_t*)malloc(sizeof(tnt_cache_t));
 	res->head = NULL;
 	res->next_node = NULL;
 	res->counter = 0;

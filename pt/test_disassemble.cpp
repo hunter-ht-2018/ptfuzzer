@@ -44,7 +44,7 @@ bool read_raw_bin()
 {
     FILE* pt_file = fopen("../raw_bin", "rb");
 
-    raw_bin_buf = malloc(max_addr_cle - min_addr_cle);
+    raw_bin_buf = (uint8_t*)malloc(max_addr_cle - min_addr_cle);
     memset(raw_bin_buf, 0, max_addr_cle - min_addr_cle);
 
     if(NULL == pt_file)
