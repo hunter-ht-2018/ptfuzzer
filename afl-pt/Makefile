@@ -70,7 +70,7 @@ afl-as: afl-as.c afl-as.h $(COMM_HDR) | test_x86
 	ln -sf afl-as as
 
 afl-fuzz: afl-fuzz.c $(COMM_HDR) | test_x86
-	$(CC) $(CFLAGS) -D_FILE_OFFSET_BITS=64 $@.c libpt.a libcapstone.a -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) -D_FILE_OFFSET_BITS=64 $@.c libpt.a -L/usr/lib -lcapstone -o $@ $(LDFLAGS)
 
 afl-showmap: afl-showmap.c $(COMM_HDR) | test_x86
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS)
