@@ -1,5 +1,7 @@
 #include <iostream>
 #include <sys/ioctl.h>
+#include <linux/perf_event.h>
+#include <linux/hw_breakpoint.h>
 
 #include "pt.h"
 
@@ -10,6 +12,12 @@ static uint8_t psb[16] = {
 	0x02, 0x82, 0x02, 0x82, 0x02, 0x82, 0x02, 0x82,
 	0x02, 0x82, 0x02, 0x82, 0x02, 0x82, 0x02, 0x82
 };
+
+static long perf_event_open(
+    struct perf_event_attr* hw_event, pid_t pid, int cpu, int group_fd, unsigned long flags) {
+        return syscall(__NR_perf_event_open, hw_event, (uintptr_t)pid, (uintptr_t)cpu,
+                (uintptr_t)group_fd, (uintptr_t)flags);
+}
 
 ssize_t files_readFromFd(int fd, uint8_t* buf, size_t fileSz) {
     size_t readSz = 0;
@@ -120,7 +128,7 @@ bool pt_tracer::open_pt() {
     pe.disabled = 1;
     pe.enable_on_exec = 1;
     pe.type = PERF_TYPE_HARDWARE;
-    pe.type = perfIntelPtPerfType;
+    //pe.type = perfIntelPtPerfType;
     pe.config = (1U << 11); /* Disable RETCompression */
 
 #if !defined(PERF_FLAG_FD_CLOEXEC)
@@ -236,7 +244,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 	return num_tnt_decoded;
 }
 
-uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip)
+uint64_t pt_packet_decoder::get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip)
 {
 	unsigned char *p = *pp;
 	uint64_t v = *last_ip;
