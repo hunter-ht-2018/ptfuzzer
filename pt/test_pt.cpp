@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 
     pid_t pid;        //进程标识符
 	pid = fork();     //创建一个新的进程
-	if(pid<0)
+	if(pid < 0)
 	{
 		printf("创建进程失败!");
 		exit(1);

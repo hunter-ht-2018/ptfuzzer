@@ -74,6 +74,29 @@ bool pt_fuzzer::config_pt() {
 	return true;
 }
 
+bool pt_fuzzer::load_binary() {
+    FILE* pt_file = fopen(this->raw_binary_file, "rb");
+    uint64_t code_size = this->max_address - this->base_address;
+    this->code = (uint8_t*)malloc(code_size);
+    memset(this->code, 0, code_size);
+
+    if(NULL == pt_file) {
+        return false;
+    }
+
+    int count = fread (code, code_size, 1, pt_file);
+    fclose(pt_file);
+    if(count != 1) {
+    	return false;
+    }
+    return true;
+}
+
+bool pt_fuzzer::build_cofi_map() {
+	uint32_t num_inst = disassemble_binary( this->code, this->base_address, this->max_address, this->cofi_map);
+	std::cout << "total number of cofi instructions: " << num_inst << std::endl;
+	return true;
+}
 
 void pt_fuzzer::init() {
 	if(!config_pt()) {
