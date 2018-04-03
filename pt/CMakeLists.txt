@@ -1,7 +1,7 @@
 set ( CMAKE_C_FLAGS "-std=c11 -D_FILE_OFFSET_BITS=64 -g")
 set ( CMAKE_CXX_FLAGS "-std=c++11 -D_FILE_OFFSET_BITS=64 -g")
 
-set(PT_SRC pt.cpp disassembler.cpp tnt_cache.cpp)
+set(PT_SRC pt_decoder.cpp disassembler.cpp tnt_cache.cpp)
 
 add_library(pt STATIC ${PT_SRC})
 #add_executable(test_pt test_pt.c)

@@ -88,6 +88,7 @@ typedef struct disassembler_s{
 
 //#define DEBUG_COFI_INST
 typedef struct _cofi_inst_t {
+	cofi_type type;
 	uint64_t inst_addr;
 	uint64_t target_addr;
 	struct _cofi_inst_t* next_cofi;

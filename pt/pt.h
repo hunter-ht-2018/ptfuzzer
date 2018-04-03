@@ -200,7 +200,130 @@ void pt_decoder_flush(decoder_t* self);
 void print_bitmap();
 uint8_t* get_trace_bits();
 
+typedef struct binary_info_t {
+	uint8_t* code;
+	uint64_t base_address;
+	uint64_t max_address;
+	uint64_t entry_point;
+};
 
+class pt_packet_decoder{
+	uint64_t min_address;
+	uint64_t max_address;
+	uint64_t last_tip = 0;
+	uint64_t last_ip2 = 0;
+	bool fup_pkt = false;
+	bool isr = false;
+	bool in_range = false;
+	tnt_cache_t* tnt_cache_state = nullptr;
+	bool pge_enabled = false;
+	uint64_t aux_head;
+	uint64_t aux_tail;
+	uint8_t* pt_packets;
+
+	cofi_map_t& cofi_map;
+	uint64_t bitmap_last_ip = 0;
+	uint8_t* trace_bits;
+public:
+	pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address);
+	void decode();
+private:
+	inline void tip_handler(uint8_t** p, uint8_t** end){
+		if (count_tnt(this->tnt_cache_state)){
+			decode_tnt(this->last_tip);
+		}
+		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+	}
+
+	inline void tip_pge_handler(uint8_t** p, uint8_t** end){
+		this->pge_enabled = true;
+		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+		//trace_disassembler(self->disassembler_state, self->last_tip, (self->isr &!self->in_range), self->tnt_cache_state);
+	}
+
+	inline void tip_pgd_handler(uint8_t** p, uint8_t** end){
+		this->pge_enabled = false;
+		if (count_tnt(this->tnt_cache_state)){
+			decode_tnt(this->last_tip);
+		}
+		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+	}
+	inline void tip_fup_handler(uint8_t** p, uint8_t** end){
+		if (count_tnt(this->tnt_cache_state)){
+			decode_tnt(this->last_tip);
+		}
+		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+	}
+	inline void psb_handler(uint8_t** p){
+		(*p) += PT_PKT_PSB_LEN;
+		flush();
+	}
+
+	inline void long_tnt_handler(uint8_t** p){
+		if (this->pge_enabled)
+	        append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
+		(*p) += PT_PKT_LTNT_LEN;
+	}
+
+	inline bool out_of_bounds(uint64_t addr) {
+		if(addr < this->min_address || addr > this->max_address)
+			return true;
+		return false;
+	}
+
+	void flush();
+	uint32_t decode_tnt(uint64_t entry_point);
+	inline void alter_bitmap(uint64_t addr) {
+		//64位地址截断为16位
+	    uint16_t last_ip16, addr16, pos16;
+	    last_ip16 = (uint16_t)(bitmap_last_ip);
+	    addr16 = (uint16_t)(addr);
+	    pos16 = (uint16_t)(last_ip16 ^ addr16);
+	    trace_bits[pos16]++;
+	    bitmap_last_ip = addr >> 1;
+	}
+};
+
+
+class pt_tracer {
+	uint8_t* perf_pt_header;
+	uint8_t* perf_pt_aux;
+	int trace_pid;
+	int perf_fd = -1;
+	//pt_decode_info_t decode_info;
+public:
+	pt_tracer(int pid) ;
+	bool open_pt();
+	bool start_trace();
+	bool stop_trace();
+	bool close_pt();
+};
+
+class pt_fuzzer {
+	std::string raw_binary_file;
+	uint64_t base_address;
+	uint64_t max_address;
+	uint64_t entry_point;
+
+	int32_t perfIntelPtPerfType = -1;
+	cofi_map_t cofi_map;
+	uint8_t* code;
+
+	pt_tracer* trace;
+
+public:
+	pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);
+	void init();
+	void start_pt_trace(int pid);
+	void stop_pt_trace();
+private:
+	bool load_binary();
+	bool build_cofi_map();
+	bool config_pt();
+
+	bool open_pt();
+
+};
 bool init_pt_decorder();
 bool pt_trace_proc(int pid);
 void decode_pt_info();
