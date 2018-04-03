@@ -200,4 +200,10 @@ void pt_decoder_flush(decoder_t* self);
 void print_bitmap();
 uint8_t* get_trace_bits();
 
+
+bool init_pt_decorder();
+bool pt_trace_proc(int pid);
+void decode_pt_info();
+bool close_pt_trace(int pid);
+
 #endif
