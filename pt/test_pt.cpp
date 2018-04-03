@@ -58,45 +58,10 @@ bool read_raw_bin()
 
 int main()
 {
-	int status;
-	run_t run = {
-        	.pid = 0,
-        	.persistentPid = 0,
-        	.persistentSock = -1,
-        	.tmOutSignaled = false
-    	};
-    ;
+	pt_fuzzer fuzzer("raw_bin", 4201040, 4437234, 4203264);
+	fuzzer.init();
 
-	if(perf_init() == false)   //!!guy!!初始化tracebits并判断intel_pt对应的perf类型
-	{
-		printf("Initial failed\n");
-		exit(1);
-	}
-
-    //read min_max.txt
-    if(read_min_max() == false)
-    {
-        printf("Open min_max.txt Falied!");
-        exit(1);
-    }
-
-    // read raw_bin from file
-    if(read_raw_bin() == false)
-    {
-        printf("Error:Open raw_bin.txt file fail!\n");
-        exit(1);
-    }
-
-    //init decoder and disassembler
-    run.decoder = pt_decoder_init(raw_bin_buf, min_addr_cle, max_addr_cle, &pt_bitmap);
-    if(run.decoder == NULL)
-    {
-        printf("Decoder struct init failed!\n");\
-		exit(1);
-    }
-
-
-
+	fuzzer.
 
     pid_t pid;        //进程标识符
 	pid = fork();     //创建一个新的进程
@@ -116,43 +81,17 @@ int main()
 		sleep(1);
 		exit(0);
 	}
-	
+
 	else          //否则为父进程
 	{
 		printf("这是父进程,进程标识符是%d\n",getpid());
-		
-		if(perf_config(pid, &run) == false)
-		{
-			printf("Config failed\n");
-			exit(1);
-		}
-		
-		if(waitpid(pid, &status, 0) <= 0)
-		{
-			perror("Error: ");
-			exit(1);
-		}
-		
-		if(perf_reap(&run) == false)
-		{
-			printf("Analyze pt failed\n");
-			exit(1);
-		}
-        uint8_t * pt_trace_bits;
-        pt_trace_bits = get_trace_bits();
-
-        memcpy(trace_bits, pt_trace_bits, MAP_SIZE);
-        bool flag = 0;
-        for(int i = 0; i < MAP_SIZE; i++) {
-            //printf("%u", trace_bits[i]);
-            if(trace_bits[i] == 1)
-            {
-                flag = 1;
-            }
-        }
+		fuzzer.start_pt_trace(pid);
+		int status;
+		waitpid(pid, &status, 0);
+		fuzzer.stop_pt_trace();
         printf("\n\n");
         printf("%d\n", flag);
 	}
-	
+
 	return 0;
 }
