@@ -241,8 +241,11 @@ private:
 	inline void tip_pge_handler(uint8_t** p, uint8_t** end){
 		this->pge_enabled = true;
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+		if(this->out_of_bounds(this->last_tip)) {
+			this->last_tip = 0;
+		}
 		//trace_disassembler(self->disassembler_state, self->last_tip, (self->isr &!self->in_range), self->tnt_cache_state);
-        std::cout << "tip_pge: last_tip = " << last_tip << std::endl;
+        std::cout << "tip_pge: last_tip = " << std::hex << last_tip << std::endl;
 	}
 
 	inline void tip_pgd_handler(uint8_t** p, uint8_t** end){
@@ -251,15 +254,22 @@ private:
 			decode_tnt(this->last_tip);
 		}
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
-        std::cout << "tip_pgd: last_tip = " << last_tip << std::endl;
+		if(this->out_of_bounds(this->last_tip)) {
+			this->last_tip = 0;
+		}
+        std::cout << "tip_pgd: last_tip = " << std::hex << last_tip << std::endl;
 	}
 	inline void tip_fup_handler(uint8_t** p, uint8_t** end){
 		if (count_tnt(this->tnt_cache_state)){
 			decode_tnt(this->last_tip);
 		}
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
-        std::cout << "tip_fup: last_tip = " << last_tip << std::endl;
+		if(this->out_of_bounds(this->last_tip)) {
+			this->last_tip = 0;
+		}
+        std::cout << "tip_fup: last_tip = " << std::hex << last_tip << std::endl;
 	}
+
 	inline void psb_handler(uint8_t** p){
 		(*p) += PT_PKT_PSB_LEN;
 		flush();
