@@ -397,7 +397,7 @@ void pt_packet_decoder::decode() {
 			/* tnt8 */
 			if ((byte0 & BIT(0)) == 0 && byte0 != 2){
 				//tnt8_handler(self, &p);
-				if(this->last_tip != 0) {
+				if( !this->out_of_bounds(this->last_tip) ) {
 					append_tnt_cache(this->tnt_cache_state, true, (uint64_t)(&p));
 				}
 				p ++;
