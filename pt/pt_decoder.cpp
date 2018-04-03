@@ -334,17 +334,17 @@ static inline void print_unknown(unsigned char* p, unsigned char* end)
 }
 void pt_packet_decoder::decode() {
 
-	if(this->aux_tail <= this->aux_head) {
-		std::cerr << "failed to decode: invalid trace data: aux_head = " << this->aux_head << ", aux_tail = " << this->aux_tail << std::end;
+	if(this->aux_tail >= this->aux_head) {
+		std::cerr << "failed to decode: invalid trace data: aux_head = " << this->aux_head << ", aux_tail = " << this->aux_tail << std::endl;
 		return;
 	}
 	uint8_t* map = this->pt_packets;
-	uint64_t len = this->aux_tail - this->aux_head - 1;
+	uint64_t len = this->aux_head - this->aux_tail - 1;
 	uint8_t* end = map + len;
 	unsigned char *p;
 	uint8_t byte0;
 
-	std::cout << "try to decode packet buffer... " << this->pt_packets << ", aux_head = " << this->aux_head << ", aux_tail = " << this->aux_tail << ", size = " << (int64_t)len << std::end;
+	std::cout << "try to decode packet buffer: " << (uint64_t)this->pt_packets << ", aux_head = " << this->aux_head << ", aux_tail = " << this->aux_tail << ", size = " << (int64_t)len << std::endl;
 	for (p = map; p < end; ) {
 		p = (unsigned char *)memmem(p, end - p, psb, PT_PKT_PSB_LEN);
 		if (!p) {

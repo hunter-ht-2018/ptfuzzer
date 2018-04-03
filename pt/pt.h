@@ -226,7 +226,7 @@ class pt_packet_decoder{
 	uint8_t* trace_bits;
 public:
 	pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address);
-	pt_packet_decoder::~pt_packet_decoder();
+	~pt_packet_decoder();
 	void decode();
 private:
 	uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip);
