@@ -249,18 +249,26 @@ pt_packet_decoder::pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_a
 	aux_tail = ATOMIC_GET(pem->aux_tail);
 	aux_head = ATOMIC_GET(pem->aux_head);
 	trace_bits = (uint8_t*)malloc(MAP_SIZE * sizeof(uint8_t));
+    tnt_cache_state = tnt_cache_init();
 }
 
 pt_packet_decoder::~pt_packet_decoder() {
 	if(trace_bits != nullptr) {
 		free(trace_bits);
 	}
+    if(tnt_cache_state != nullptr){
+        tnt_cache_destroy(tnt_cache_state);
+    }
 }
 
 uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 	uint8_t tnt;
 	uint32_t num_tnt_decoded = 0;
 	cofi_inst_t* cofi_obj = this->cofi_map[entry_point];
+    if(cofi_obj == nullptr){
+        std::cerr << "can not find cofi for addr: " << entry_point << std::endl;
+        exit(-1);
+    }
 	while(count_tnt(tnt_cache_state)) {
 
 		tnt = process_tnt_cache(tnt_cache_state);
@@ -268,16 +276,24 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		case TNT_EMPTY:
 			return num_tnt_decoded;
 		case TAKEN:
+        {
 			//~ sample_decoded_detailed("(%d)\t%lx\t(Taken)\n", COFI_TYPE_CONDITIONAL_BRANCH, obj->cofi->ins_addr);
 			//self->handler(obj->cofi->ins_addr);
-			if (out_of_bounds(cofi_obj->target_addr))
+            uint64_t target_addr = cofi_obj->target_addr;
+			if (out_of_bounds(target_addr))
 				return num_tnt_decoded;
-			cofi_obj = cofi_map[cofi_obj->target_addr];
+			cofi_obj = cofi_map[target_addr];
+            if(cofi_obj == nullptr){
+                std::cerr << "can not find cofi for addr: " << target_addr << std::endl;
+                exit(-1);
+            }
 			break;
+        }
 		case NOT_TAKEN:
 			//~ sample_decoded_detailed("(%d)\t%lx\t(Not Taken)\n", COFI_TYPE_CONDITIONAL_BRANCH ,obj->cofi->ins_addr);
 			alter_bitmap(cofi_obj->next_cofi->inst_addr);
 			cofi_obj = cofi_obj->next_cofi;
+
 			break;
 		}
 		num_tnt_decoded ++;
