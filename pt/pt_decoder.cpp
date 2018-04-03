@@ -71,11 +71,12 @@ bool pt_fuzzer::config_pt() {
 
 	buf[sz] = '\0';
 	perfIntelPtPerfType = (int32_t)strtoul((char*)buf, NULL, 10);
+    std::cout << "config PT OK, perfIntelPtPerfType = " << perfIntelPtPerfType << std::endl;
 	return true;
 }
 
 bool pt_fuzzer::load_binary() {
-    FILE* pt_file = fopen(this->raw_binary_file, "rb");
+    FILE* pt_file = fopen(this->raw_binary_file.c_str(), "rb");
     uint64_t code_size = this->max_address - this->base_address;
     this->code = (uint8_t*)malloc(code_size);
     memset(this->code, 0, code_size);
@@ -100,28 +101,37 @@ bool pt_fuzzer::build_cofi_map() {
 
 void pt_fuzzer::init() {
 	if(!config_pt()) {
+        std::cerr << "config PT failed." << std::endl;
 		exit(-1);
 	}
+    std::cout << "config PT OK." << std::endl;
+
 	if(!load_binary()) {
 		std::cerr << "load raw binary file failed." << std::endl;
 		exit(-1);
 	}
+    std::cout << "load binary OK." << std::endl;
+
 	if(!build_cofi_map()){
 		std::cerr << "build cofi map for binary failed." << std::endl;
 		exit(-1);
 	}
+    std::cout << "build cofi map OK." << std::endl;
 }
 
 void pt_fuzzer::start_pt_trace(int pid) {
 	this->trace = new pt_tracer(pid);
-	if(!trace->open_pt()){
+	if(!trace->open_pt(perfIntelPtPerfType)){
 		std::cerr << "open PT event failed." << std::endl;
 		exit(-1);
 	}
+    std::cout << "open PT event OK." << std::endl;
+
 	if(!trace->start_trace()){
-		std::cerr << "stop PT event failed." << std::endl;
+		std::cerr << "start PT event failed." << std::endl;
 		exit(-1);
 	}
+    std::cout << "start to trace process, pid = " << pid << std::endl;
 }
 
 void pt_fuzzer::stop_pt_trace() {
@@ -129,12 +139,12 @@ void pt_fuzzer::stop_pt_trace() {
 		std::cerr << "stop PT event failed." << std::endl;
 		exit(-1);
 	}
-
+    std::cout << "stop pt trace OK." << std::endl;
 	delete this->trace;
 	this->trace = nullptr;
 }
 
-bool pt_tracer::open_pt() {
+bool pt_tracer::open_pt(int pt_perf_type) {
 
 	int pid = this->trace_pid;
     struct perf_event_attr pe;
@@ -150,8 +160,9 @@ bool pt_tracer::open_pt() {
     ///////////////
     pe.disabled = 1;
     pe.enable_on_exec = 1;
-    pe.type = PERF_TYPE_HARDWARE;
-    //pe.type = perfIntelPtPerfType;
+    //pe.type = PERF_TYPE_HARDWARE;
+    pe.type = pt_perf_type;
+    std::cout << "pe.type = " << pe.type << std::endl;
     pe.config = (1U << 11); /* Disable RETCompression */
 
 #if !defined(PERF_FLAG_FD_CLOEXEC)
@@ -159,7 +170,6 @@ bool pt_tracer::open_pt() {
 #endif
     perf_fd = perf_event_open(&pe, pid, -1, -1, PERF_FLAG_FD_CLOEXEC);
     if (perf_fd == -1) {
-		perror("ERROR: ");
         printf("perf_event_open() failed\n");
         return false;
     }

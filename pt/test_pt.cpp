@@ -1,4 +1,5 @@
 #include "pt.h"
+#include <iostream>
 
 uint64_t min_addr_cle, max_addr_cle, entry_point_cle;
 uint8_t* raw_bin_buf;
@@ -71,17 +72,17 @@ int main(int argc, char** argv)
 	}
 	else if(pid == 0)   //如果pid为0则表示当前执行的是子进程
 	{
-		printf("这是子进程,进程标识符是%d\n",getpid());
-		//执行ls
+		std::cout << "child process start, pid is " << getpid() << "." << std::endl;
 		sleep(1);
         //std::string bin_file = "/home/guy/ptfuzzer/afl-pt/ptest/readelf";
         //std::string args = "-a /home/guy/ptfuzzer/afl-pt/ptest/in/small_exec.elf";
-        char* args[2] = {"-a", "/home/guy/ptfuzzer/afl-pt/ptest/in/small_exec.elf"};
-		execv("/home/guy/ptfuzzer/afl-pt/ptest/readelf", args);
-		//printf("execv\n");
-		sleep(1);
-		exit(0);
-	}
+        char* args[4] = {"readelf", "-a", "/home/zhouxu/ptfuzzer/afl-pt/ptest/in/small_exec.elf", nullptr};
+		int ret = execv("/home/zhouxu/ptfuzzer/afl-pt/ptest/readelf", args);
+	    if(ret == -1){
+            std::cerr << "execv failed." << std::endl;
+            exit(-1);
+        }
+    }
 
 	else          //否则为父进程
 	{

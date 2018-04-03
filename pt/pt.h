@@ -294,7 +294,7 @@ class pt_tracer {
 	//pt_decode_info_t decode_info;
 public:
 	pt_tracer(int pid) ;
-	bool open_pt();
+	bool open_pt(int pt_perf_type);
 	bool start_trace();
 	bool stop_trace();
 	bool close_pt();
