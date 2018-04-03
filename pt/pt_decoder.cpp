@@ -139,7 +139,10 @@ void pt_fuzzer::stop_pt_trace() {
 		std::cerr << "stop PT event failed." << std::endl;
 		exit(-1);
 	}
-    std::cout << "stop pt trace OK." << std::endl;
+	std::cout << "stop pt trace OK." << std::endl;
+	pt_packet_decoder decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address);
+	decoder.decode();
+
 	delete this->trace;
 	this->trace = nullptr;
 }
@@ -248,6 +251,11 @@ pt_packet_decoder::pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_a
 	trace_bits = (uint8_t*)malloc(MAP_SIZE * sizeof(uint8_t));
 }
 
+pt_packet_decoder::~pt_packet_decoder() {
+	if(trace_bits != nullptr) {
+		free(trace_bits);
+	}
+}
 
 uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 	uint8_t tnt;
@@ -325,12 +333,18 @@ static inline void print_unknown(unsigned char* p, unsigned char* end)
 	printf("\n");
 }
 void pt_packet_decoder::decode() {
+
+	if(this->aux_tail <= this->aux_head) {
+		std::cerr << "failed to decode: invalid trace data: aux_head = " << this->aux_head << ", aux_tail = " << this->aux_tail << std::end;
+		return;
+	}
 	uint8_t* map = this->pt_packets;
 	uint64_t len = this->aux_tail - this->aux_head - 1;
 	uint8_t* end = map + len;
 	unsigned char *p;
 	uint8_t byte0;
 
+	std::cout << "try to decode packet buffer... " << this->pt_packets << ", aux_head = " << this->aux_head << ", aux_tail = " << this->aux_tail << ", size = " << (int64_t)len << std::end;
 	for (p = map; p < end; ) {
 		p = (unsigned char *)memmem(p, end - p, psb, PT_PKT_PSB_LEN);
 		if (!p) {
