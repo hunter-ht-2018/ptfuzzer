@@ -59,7 +59,8 @@ bool read_raw_bin()
 
 int main(int argc, char** argv)
 {
-	pt_fuzzer fuzzer("raw_bin", 4201040, 4437234, 4203264);
+
+	pt_fuzzer fuzzer("raw_bin", 4195296, 4195858, 0x400538);
 	fuzzer.init();
 
 
@@ -76,8 +77,8 @@ int main(int argc, char** argv)
 		sleep(1);
         //std::string bin_file = "/home/guy/ptfuzzer/afl-pt/ptest/readelf";
         //std::string args = "-a /home/guy/ptfuzzer/afl-pt/ptest/in/small_exec.elf";
-        char* args[4] = {"readelf", "-a", "/home/zhouxu/ptfuzzer/afl-pt/ptest/in/small_exec.elf", nullptr};
-		int ret = execv("/usr/bin/readelf", args);
+        char* args[4] = {"test", "-a", "/home/zhouxu/ptfuzzer/afl-pt/ptest/in/small_exec.elf", nullptr};
+		int ret = execv("./test", args);
 	    if(ret == -1){
             std::cerr << "execv failed." << std::endl;
             exit(-1);
