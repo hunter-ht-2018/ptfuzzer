@@ -210,8 +210,11 @@ typedef struct binary_info_t {
 class pt_packet_decoder{
 	uint64_t min_address;
 	uint64_t max_address;
+	uint64_t app_entry_point;
 	uint64_t last_tip = 0;
 	uint64_t last_ip2 = 0;
+	bool start_decode = false;
+
 	bool fup_pkt = false;
 	bool isr = false;
 	bool in_range = false;
@@ -227,7 +230,7 @@ class pt_packet_decoder{
 
     uint64_t num_decoded_branch = 0;
 public:
-	pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address);
+	pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address, uint64_t entry_point);
 	~pt_packet_decoder();
 	void decode();
 private:
