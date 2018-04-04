@@ -240,12 +240,17 @@ private:
 		//if (count_tnt(this->tnt_cache_state)){
 		//	decode_tnt(this->last_tip);
 		//}
-		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
-        if(last_tip == app_entry_point) {
+		uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+        if(tip == app_entry_point) {
             std::cout << "enter program entry point" << std::endl;
             this->start_decode = true;
         }
-        if(this->start_decode) std::cout << "tip: " << last_tip << std::endl;
+        //if(this->start_decode) 
+        std::cout << "tip: " << std::hex << tip << std::endl;
+        if(this->start_decode){
+        	decode_tnt(this->last_tip);
+        }
+        this->last_tip = tip;
 	}
 
 	inline void tip_pge_handler(uint8_t** p, uint8_t** end){
@@ -256,7 +261,8 @@ private:
             std::cout << "enter program entry point" << std::endl;
             this->start_decode = true;
         }
-        if(this->start_decode) std::cout << "tip_pge: " << std::hex << last_tip << std::endl;
+        //if(this->start_decode) 
+        std::cout << "tip_pge: " << std::hex << last_tip << std::endl;
 	}
 
 	inline void tip_pgd_handler(uint8_t** p, uint8_t** end){
@@ -265,12 +271,17 @@ private:
 		//if (count_tnt(this->tnt_cache_state)){
 		//	decode_tnt(this->last_tip);
 		//}
-		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
-        if(last_tip == app_entry_point) {
+		uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+        if(tip == app_entry_point) {
             std::cout << "enter program entry point" << std::endl;
             this->start_decode = true;
         }
-        if(this->start_decode) std::cout << "tip_pgd: " << std::hex << last_tip << std::endl;
+        //if(this->start_decode) 
+        std::cout << "tip_pgd: " << std::hex << tip << std::endl;
+        if(this->start_decode){
+        	decode_tnt(this->last_tip);
+        }
+        this->last_tip = tip;
 	}
 
 	inline void tip_fup_handler(uint8_t** p, uint8_t** end){
@@ -278,12 +289,18 @@ private:
 		//if (count_tnt(this->tnt_cache_state)){
 		//	decode_tnt(this->last_tip);
 		//}
-		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
-        if(last_tip == app_entry_point) {
+		uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+        if(tip == app_entry_point) {
             std::cout << "enter program entry point" << std::endl;
             this->start_decode = true;
         }
-        if(this->start_decode) std::cout << "tip_fup: " << std::hex << last_tip << std::endl;
+        //if(this->start_decode) 
+        std::cout << "tip_fup: " << std::hex << tip << std::endl;
+        if(this->start_decode){
+        	decode_tnt(this->last_tip);
+    	}
+        this->last_tip = tip;
+
 	}
 
 	inline void psb_handler(uint8_t** p){
@@ -292,17 +309,32 @@ private:
 		flush();
 	}
 
+    void print_tnt(tnt_cache_t* tnt_cache);
 	inline void tnt8_handler(uint8_t** p){
-		std::cout << "tnt8" << std::endl;
-		if (this->pge_enabled)
+        //uint64_t old_count = count_tnt(tnt_cache_state);
+		std::cout << "tnt8: ";
+		//if (this->pge_enabled)
+		std::cout << start_decode << ", " << this->pge_enabled << std::endl;
+		if (this->start_decode && this->pge_enabled) {
+        	//tnt_cache_t* tnt_cache = tnt_cache_init();
 			append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
+        	//print_tnt(tnt_cache_state);
+        	std::cout << "count_tnt: " << count_tnt(tnt_cache_state) << std::endl;
+        	//tnt_cache_destroy(tnt_cache);
+        }
+        //uint64_t new_count = count_tnt(tnt_cache_state);
+        //std::cout << new_count - old_count << std::endl;
 		(*p)++;
 	}
 
 	inline void long_tnt_handler(uint8_t** p){
-		std::cout << "long tnt" << std::endl;
-		if (this->pge_enabled)
+		std::cout << "long tnt: ";
+		if (this->start_decode && this->pge_enabled) {
+        	//tnt_cache_t* tnt_cache = tnt_cache_init();
 	        append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
+        	print_tnt(tnt_cache_state);
+        	//tnt_cache_destroy(tnt_cache);
+    	}
 		(*p) += PT_PKT_LTNT_LEN;
 	}
 

@@ -80,7 +80,7 @@ int main (int argc, char** argv) {
 	}
 	std::cout << "first address contain cofi is : " << addr_start << std::endl;
 	while(head != nullptr) {
-		//std::cout << std::hex << head->inst_addr << " -> " << head->target_addr << std::endl;
+		std::cout << std::hex << head->inst_addr << " -> " << head->target_addr << std::endl;
 		head = head->next_cofi;
 	}
 	std::cout << "number of cofi inst: " << num_cofi_inst << std::endl;

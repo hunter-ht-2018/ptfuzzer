@@ -565,6 +565,7 @@ uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t
 		if (type != NO_COFI_TYPE){
 			num_cofi_inst ++;
 			current_cofi->inst_addr = insn->address;
+			current_cofi->type = get_inst_type(insn);
 			if (type == COFI_TYPE_CONDITIONAL_BRANCH || type == COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH){
 				current_cofi->target_addr = hex_to_bin(insn->op_str);
 			}
