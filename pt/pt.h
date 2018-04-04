@@ -227,7 +227,7 @@ class pt_packet_decoder{
 	cofi_map_t& cofi_map;
 	uint64_t bitmap_last_ip = 0;
 	uint8_t* trace_bits;
-
+public:
     uint64_t num_decoded_branch = 0;
 public:
 	pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address, uint64_t entry_point);
@@ -241,6 +241,11 @@ private:
 			decode_tnt(this->last_tip);
 		}
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+        if(last_tip == app_entry_point) {
+            std::cout << "enter program entry point" << std::endl;
+            this->start_decode = true;
+            //exit(0);
+        }
         std::cout << "tip: last_tip = " << last_tip << std::endl;
 	}
 
@@ -248,6 +253,10 @@ private:
         std::cout << "enter tip_pge_handler" << std::endl;
 		this->pge_enabled = true;
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+        if(last_tip == app_entry_point) {
+            std::cout << "enter program entry point" << std::endl;
+            exit(0);
+        }
 		//trace_disassembler(self->disassembler_state, self->last_tip, (self->isr &!self->in_range), self->tnt_cache_state);
         std::cout << "tip_pge: last_tip = " << std::hex << last_tip << std::endl;
 	}
@@ -259,6 +268,10 @@ private:
 			decode_tnt(this->last_tip);
 		}
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+        if(last_tip == app_entry_point) {
+            std::cout << "enter program entry point" << std::endl;
+            exit(0);
+        }
         std::cout << "tip_pgd: last_tip = " << std::hex << last_tip << std::endl;
 	}
 	inline void tip_fup_handler(uint8_t** p, uint8_t** end){
@@ -267,6 +280,10 @@ private:
 			decode_tnt(this->last_tip);
 		}
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+        if(last_tip == app_entry_point) {
+            std::cout << "enter program entry point" << std::endl;
+            exit(0);
+        }
         std::cout << "tip_fup: last_tip = " << std::hex << last_tip << std::endl;
 	}
 

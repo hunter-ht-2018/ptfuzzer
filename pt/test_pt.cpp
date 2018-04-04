@@ -77,7 +77,7 @@ int main(int argc, char** argv)
         //std::string bin_file = "/home/guy/ptfuzzer/afl-pt/ptest/readelf";
         //std::string args = "-a /home/guy/ptfuzzer/afl-pt/ptest/in/small_exec.elf";
         char* args[4] = {"readelf", "-a", "/home/zhouxu/ptfuzzer/afl-pt/ptest/in/small_exec.elf", nullptr};
-		int ret = execv("/home/zhouxu/ptfuzzer/afl-pt/ptest/readelf", args);
+		int ret = execv("/usr/bin/readelf", args);
 	    if(ret == -1){
             std::cerr << "execv failed." << std::endl;
             exit(-1);

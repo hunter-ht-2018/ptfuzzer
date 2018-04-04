@@ -142,7 +142,7 @@ void pt_fuzzer::stop_pt_trace() {
 	std::cout << "stop pt trace OK." << std::endl;
 	pt_packet_decoder decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address, this->entry_point);
 	decoder.decode();
-
+    std::cout << "decode finished, total number of decoded branch: " << decoder.num_decoded_branch << std::endl;
 	delete this->trace;
 	this->trace = nullptr;
 }
@@ -244,12 +244,13 @@ bool pt_tracer::stop_trace(){
 
 pt_packet_decoder::pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map,
 		uint64_t min_address, uint64_t max_address, uint64_t entry_point) :
-		pt_packets(perf_pt_aux), cofi_map(map), min_address(min_address), max_address(max_address), entry_point(app_entry_point){
+		pt_packets(perf_pt_aux), cofi_map(map), min_address(min_address), max_address(max_address), app_entry_point(entry_point){
 	struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)perf_pt_header;
 	aux_tail = ATOMIC_GET(pem->aux_tail);
 	aux_head = ATOMIC_GET(pem->aux_head);
 	trace_bits = (uint8_t*)malloc(MAP_SIZE * sizeof(uint8_t));
     tnt_cache_state = tnt_cache_init();
+    std::cout << "app_entry_point = " << app_entry_point << std::endl;
 }
 
 pt_packet_decoder::~pt_packet_decoder() {
@@ -264,22 +265,26 @@ pt_packet_decoder::~pt_packet_decoder() {
 uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 	uint8_t tnt;
 	uint32_t num_tnt_decoded = 0;
+	cofi_inst_t* cofi_obj = nullptr;
+    std::cout << "call in decode_tnt" << std::endl;
 	if(entry_point == this->app_entry_point) {
+        std::cout << "enter program entry point, from now on, the PT packet is about the new progra, we start to decode." << std::endl;
 		this->start_decode = true;
 	}
 	if(this->start_decode) {
 		std::cout << "calling decode_tnt for entry_point: " << std::hex << entry_point << std::endl;
-		cofi_inst_t* cofi_obj = this->cofi_map[entry_point];
+		cofi_obj = this->cofi_map[entry_point];
 		if(cofi_obj == nullptr){
 			std::cerr << "can not find cofi for entry_point: " << std::hex << "0x" << entry_point << std::endl;
 			std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
 			exit(-1);
 		}
 	}
+    std::cout << "decode_tnt: before while, start_decode = " << this->start_decode << std::endl; 
 	while(count_tnt(tnt_cache_state)) {
-        std::cout << "decode tnt" << std::endl;
 		tnt = process_tnt_cache(tnt_cache_state);
 		if( !this->start_decode ) continue;
+        std::cout << "decode tnt: "  << std::endl;
 		switch(tnt){
 		case TNT_EMPTY:
             std::cerr << "warning: case TNT_EMPTY." << std::endl;
@@ -311,7 +316,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 			break;
 		}
 		num_tnt_decoded ++;
-        num_decoded_branch ++;
+        this->num_decoded_branch ++;
 	}
 	return num_tnt_decoded;
 }
@@ -535,9 +540,11 @@ void pt_packet_decoder::decode() {
 			}
 
 			print_unknown(p, end);
+            std::cout << "unknow pt packets." << std::endl;
 			return;
 		}
 	}
+    std::cout << "decode PT parckets finished." << std::endl;
 }
 
 void pt_packet_decoder::flush(){
