@@ -573,12 +573,12 @@ uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t
 				printf("%lx:\t(%d)\t%s\t%s\t\t\n", insn->address, type, insn->mnemonic, insn->op_str);
 			}
 			current_cofi->next_cofi = nullptr;
-			cofi_map[current_cofi->inst_addr] = current_cofi;
+			cofi_map[insn->address] = current_cofi;
 			pre_cofi = current_cofi;
 			current_cofi = nullptr;
 		}
 		else {
-			cofi_map[current_cofi->inst_addr] = current_cofi;
+			cofi_map[insn->address] = current_cofi;
 		}
 	}
 

@@ -264,39 +264,48 @@ pt_packet_decoder::~pt_packet_decoder() {
 uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 	uint8_t tnt;
 	uint32_t num_tnt_decoded = 0;
+    std::cout << "calling decode_tnt for entry_point: " << std::hex << entry_point << std::endl;
 	cofi_inst_t* cofi_obj = this->cofi_map[entry_point];
     if(cofi_obj == nullptr){
-        std::cerr << "can not find cofi for addr: " << entry_point << std::endl;
+        std::cerr << "can not find cofi for entry_point: " << std::hex << "0x" << entry_point << std::endl;
+        std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
         exit(-1);
     }
 	while(count_tnt(tnt_cache_state)) {
-
+        std::cout << "decode tnt" << std::endl;
 		tnt = process_tnt_cache(tnt_cache_state);
 		switch(tnt){
 		case TNT_EMPTY:
+            std::cerr << "warning: case TNT_EMPTY." << std::endl;
 			return num_tnt_decoded;
 		case TAKEN:
         {
 			//~ sample_decoded_detailed("(%d)\t%lx\t(Taken)\n", COFI_TYPE_CONDITIONAL_BRANCH, obj->cofi->ins_addr);
+            std::cout << "inst " << cofi_obj->inst_addr << " TAKEN, target = " << cofi_obj->target_addr << std::endl;
 			//self->handler(obj->cofi->ins_addr);
             uint64_t target_addr = cofi_obj->target_addr;
-			if (out_of_bounds(target_addr))
+			if (out_of_bounds(target_addr)){
+                std::cerr << "error: tnt target out of bounds, inst address = " << std::hex << cofi_obj->inst_addr << ", target = " << target_addr << std::endl;
 				return num_tnt_decoded;
+            }
 			cofi_obj = cofi_map[target_addr];
             if(cofi_obj == nullptr){
-                std::cerr << "can not find cofi for addr: " << target_addr << std::endl;
+                std::cerr << "can not find cofi for addr: " << std::hex << "0x" << target_addr << std::endl;
+                std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
                 exit(-1);
             }
 			break;
         }
 		case NOT_TAKEN:
 			//~ sample_decoded_detailed("(%d)\t%lx\t(Not Taken)\n", COFI_TYPE_CONDITIONAL_BRANCH ,obj->cofi->ins_addr);
+            std::cout << "inst " << cofi_obj->inst_addr << " NOT_TAKEN, next = " << cofi_obj->next_cofi->inst_addr << std::endl;
 			alter_bitmap(cofi_obj->next_cofi->inst_addr);
 			cofi_obj = cofi_obj->next_cofi;
 
 			break;
 		}
 		num_tnt_decoded ++;
+        num_decoded_branch ++;
 	}
 	return num_tnt_decoded;
 }
@@ -398,7 +407,9 @@ void pt_packet_decoder::decode() {
 			if ((byte0 & BIT(0)) == 0 && byte0 != 2){
 				//tnt8_handler(self, &p);
 				if( !this->out_of_bounds(this->last_tip) ) {
+                    std::cout << "append tnt" << std::endl;
 					append_tnt_cache(this->tnt_cache_state, true, (uint64_t)(&p));
+                    std::cout << "number of tnt after append: " << count_tnt(this->tnt_cache_state) << std::endl;
 				}
 				p ++;
 				continue;
@@ -475,6 +486,7 @@ void pt_packet_decoder::decode() {
 
 				/* long TNT */
 				if (p[1] == PT_PKT_LTNT_BYTE1 && LEFT(PT_PKT_LTNT_LEN)) {
+                    std::cout << "append long tnt" << std::endl;
 					long_tnt_handler(&p);
 					continue;
 				}

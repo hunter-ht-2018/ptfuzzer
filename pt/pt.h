@@ -224,6 +224,8 @@ class pt_packet_decoder{
 	cofi_map_t& cofi_map;
 	uint64_t bitmap_last_ip = 0;
 	uint8_t* trace_bits;
+
+    uint64_t num_decoded_branch = 0;
 public:
 	pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address);
 	~pt_packet_decoder();
@@ -231,6 +233,7 @@ public:
 private:
 	uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip);
 	inline void tip_handler(uint8_t** p, uint8_t** end){
+        std::cout << "enter tip_handler, number of tnt: " << count_tnt(this->tnt_cache_state) << std::endl;
 		if (count_tnt(this->tnt_cache_state)){
 			decode_tnt(this->last_tip);
 		}
@@ -239,6 +242,7 @@ private:
 	}
 
 	inline void tip_pge_handler(uint8_t** p, uint8_t** end){
+        std::cout << "enter tip_pge_handler" << std::endl;
 		this->pge_enabled = true;
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
 		//trace_disassembler(self->disassembler_state, self->last_tip, (self->isr &!self->in_range), self->tnt_cache_state);
@@ -246,6 +250,7 @@ private:
 	}
 
 	inline void tip_pgd_handler(uint8_t** p, uint8_t** end){
+        std::cout << "enter tip_pgd_handler" << std::endl;
 		this->pge_enabled = false;
 		if (count_tnt(this->tnt_cache_state)){
 			decode_tnt(this->last_tip);
@@ -254,6 +259,7 @@ private:
         std::cout << "tip_pgd: last_tip = " << std::hex << last_tip << std::endl;
 	}
 	inline void tip_fup_handler(uint8_t** p, uint8_t** end){
+        std::cout << "enter tip_fup_handler" << std::endl;
 		if (count_tnt(this->tnt_cache_state)){
 			decode_tnt(this->last_tip);
 		}
