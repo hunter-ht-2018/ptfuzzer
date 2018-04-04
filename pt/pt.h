@@ -236,63 +236,71 @@ public:
 private:
 	uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip);
 	inline void tip_handler(uint8_t** p, uint8_t** end){
-        std::cout << "enter tip_handler, number of tnt: " << count_tnt(this->tnt_cache_state) << std::endl;
-		if (count_tnt(this->tnt_cache_state)){
-			decode_tnt(this->last_tip);
-		}
+        //std::cout << "tip: " << count_tnt(this->tnt_cache_state) << std::endl;
+		//if (count_tnt(this->tnt_cache_state)){
+		//	decode_tnt(this->last_tip);
+		//}
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
         if(last_tip == app_entry_point) {
             std::cout << "enter program entry point" << std::endl;
             this->start_decode = true;
-            //exit(0);
         }
-        std::cout << "tip: last_tip = " << last_tip << std::endl;
+        if(this->start_decode) std::cout << "tip: " << last_tip << std::endl;
 	}
 
 	inline void tip_pge_handler(uint8_t** p, uint8_t** end){
-        std::cout << "enter tip_pge_handler" << std::endl;
+        //std::cout << "tip_pge_handler" << std::endl;
 		this->pge_enabled = true;
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
         if(last_tip == app_entry_point) {
             std::cout << "enter program entry point" << std::endl;
-            exit(0);
+            this->start_decode = true;
         }
-		//trace_disassembler(self->disassembler_state, self->last_tip, (self->isr &!self->in_range), self->tnt_cache_state);
-        std::cout << "tip_pge: last_tip = " << std::hex << last_tip << std::endl;
+        if(this->start_decode) std::cout << "tip_pge: " << std::hex << last_tip << std::endl;
 	}
 
 	inline void tip_pgd_handler(uint8_t** p, uint8_t** end){
-        std::cout << "enter tip_pgd_handler" << std::endl;
+        //std::cout << "enter tip_pgd_handler" << std::endl;
 		this->pge_enabled = false;
-		if (count_tnt(this->tnt_cache_state)){
-			decode_tnt(this->last_tip);
-		}
+		//if (count_tnt(this->tnt_cache_state)){
+		//	decode_tnt(this->last_tip);
+		//}
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
         if(last_tip == app_entry_point) {
             std::cout << "enter program entry point" << std::endl;
-            exit(0);
+            this->start_decode = true;
         }
-        std::cout << "tip_pgd: last_tip = " << std::hex << last_tip << std::endl;
+        if(this->start_decode) std::cout << "tip_pgd: " << std::hex << last_tip << std::endl;
 	}
+
 	inline void tip_fup_handler(uint8_t** p, uint8_t** end){
-        std::cout << "enter tip_fup_handler" << std::endl;
-		if (count_tnt(this->tnt_cache_state)){
-			decode_tnt(this->last_tip);
-		}
+        //std::cout << "enter tip_fup_handler" << std::endl;
+		//if (count_tnt(this->tnt_cache_state)){
+		//	decode_tnt(this->last_tip);
+		//}
 		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
         if(last_tip == app_entry_point) {
             std::cout << "enter program entry point" << std::endl;
-            exit(0);
+            this->start_decode = true;
         }
-        std::cout << "tip_fup: last_tip = " << std::hex << last_tip << std::endl;
+        if(this->start_decode) std::cout << "tip_fup: " << std::hex << last_tip << std::endl;
 	}
 
 	inline void psb_handler(uint8_t** p){
+		std::cout << "psb packet" << std::endl;
 		(*p) += PT_PKT_PSB_LEN;
 		flush();
 	}
 
+	inline void tnt8_handler(uint8_t** p){
+		std::cout << "tnt8" << std::endl;
+		if (this->pge_enabled)
+			append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
+		(*p)++;
+	}
+
 	inline void long_tnt_handler(uint8_t** p){
+		std::cout << "long tnt" << std::endl;
 		if (this->pge_enabled)
 	        append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
 		(*p) += PT_PKT_LTNT_LEN;

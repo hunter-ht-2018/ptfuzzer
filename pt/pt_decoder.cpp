@@ -417,13 +417,7 @@ void pt_packet_decoder::decode() {
 
 			/* tnt8 */
 			if ((byte0 & BIT(0)) == 0 && byte0 != 2){
-				//tnt8_handler(self, &p);
-				if( !this->out_of_bounds(this->last_tip) ) {
-                    std::cout << "append tnt" << std::endl;
-					append_tnt_cache(this->tnt_cache_state, true, (uint64_t)(&p));
-                    std::cout << "number of tnt after append: " << count_tnt(this->tnt_cache_state) << std::endl;
-				}
-				p ++;
+				tnt8_handler(self, &p);
 				continue;
 			}
 
