@@ -2,7 +2,7 @@
 #include <sys/ioctl.h>
 #include <linux/perf_event.h>
 #include <linux/hw_breakpoint.h>
-
+#include <assert.h>
 #include "pt.h"
 
 #define ATOMIC_POST_OR_RELAXED(x, y) __atomic_fetch_or(&(x), y, __ATOMIC_RELAXED)
@@ -131,6 +131,9 @@ void pt_fuzzer::start_pt_trace(int pid) {
 		std::cerr << "start PT event failed." << std::endl;
 		exit(-1);
 	}
+	std::cout << "after start_trace" << std::endl;
+    rdmsr_on_all_cpus(0x570);
+
     std::cout << "start to trace process, pid = " << pid << std::endl;
 }
 
@@ -167,7 +170,6 @@ bool pt_tracer::open_pt(int pt_perf_type) {
     pe.type = pt_perf_type;
     std::cout << "pe.type = " << pe.type << std::endl;
     pe.config = (1U << 11); /* Disable RETCompression */
-
 #if !defined(PERF_FLAG_FD_CLOEXEC)
 #define PERF_FLAG_FD_CLOEXEC 0
 #endif
@@ -176,7 +178,12 @@ bool pt_tracer::open_pt(int pt_perf_type) {
         printf("perf_event_open() failed\n");
         return false;
     }
-
+    char* reg_value[2] = {"0x100002908", nullptr};
+    std::cout << "before wrmsr" << std::endl;
+    rdmsr_on_all_cpus(0x570);
+    wrmsr_on_all_cpus(0x570, 1, reg_value);
+    std::cout << "after wrmsr" << std::endl;
+    rdmsr_on_all_cpus(0x570);
 //#if defined(PERF_ATTR_SIZE_VER5)
     this->perf_pt_header =
         (uint8_t*)mmap(NULL, _HF_PERF_MAP_SZ + getpagesize(), PROT_READ | PROT_WRITE, MAP_SHARED, perf_fd, 0);
@@ -214,6 +221,8 @@ bool pt_tracer::open_pt(int pt_perf_type) {
     //~ LOG_F("Your <linux_t/perf_event.h> includes are too old to support Intel PT/BTS");
 //#endif /* defined(PERF_ATTR_SIZE_VER5) */
 
+	std::cout << "after mmap" << std::endl;
+    rdmsr_on_all_cpus(0x570);
     return true;
 }
 
@@ -302,15 +311,14 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 	if(cofi_obj == nullptr){
 		std::cerr << "can not find cofi for entry_point: " << std::hex << "0x" << entry_point << std::endl;
 		std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
-		exit(-1);
+		return 0;
 	}
 	
     std::cout << "decode_tnt: before while, start_decode = " << this->start_decode << std::endl; 
 	while(true) {
 		if(cofi_obj == nullptr){
-		    std::cerr << "can not find cofi" << std::endl;
-		    std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
-		    exit(-1);
+			std::cout << "cofi_obj = null, current decoding finished." << std::endl;
+		    break;
 		}
 		switch(cofi_obj->type){
 
@@ -349,32 +357,33 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 				std::cout << "COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH: " << std::hex << cofi_obj->inst_addr << ", target = " << cofi_obj->target_addr << std::endl;
 				uint64_t target_addr = cofi_obj->target_addr;
 				cofi_obj = cofi_map[target_addr];
-				//exit(0);
 				break;
 			}
 			case COFI_TYPE_INDIRECT_BRANCH:
-				exit(0);
-				return false;
+				std::cout << "COFI_TYPE_INDIRECT_BRANCH: " << std::hex << cofi_obj->inst_addr << ", target = " << cofi_obj->target_addr << std::endl;
+				assert(false); //not implemented.
+				cofi_obj = nullptr;
 				break;
 
 			case COFI_TYPE_NEAR_RET:
-				
-				exit(0);
-				return false;
+				std::cout << "COFI_TYPE_NEAR_RET: " << std::hex << cofi_obj->inst_addr << ", target = " << cofi_obj->target_addr << std::endl;
+				cofi_obj = nullptr;
 				break;
 
 			case COFI_TYPE_FAR_TRANSFERS:
-				exit(0);
-				return true;
+				std::cout << "COFI_TYPE_FAR_TRANSFERS: " << std::hex << cofi_obj->inst_addr << ", target = " << cofi_obj->target_addr << std::endl;
+				assert(false); //not implemented.
+				cofi_obj = nullptr;
 				break;
 
 			case NO_COFI_TYPE:
-				
+				cofi_obj = nullptr;
 				break;
 		}
 		num_tnt_decoded ++;
         this->num_decoded_branch ++;
 	}
+
 	return num_tnt_decoded;
 }
 

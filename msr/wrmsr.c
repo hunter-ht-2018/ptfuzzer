@@ -77,7 +77,8 @@ void wrmsr_on_all_cpus(uint32_t reg, int valcnt, char *regvals[])
 	free(namelist);
 }
 
-int main(int argc, char *argv[])
+
+int wrmsr_main(int argc, char *argv[])
 {
 	uint32_t reg;
 	int c;

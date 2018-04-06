@@ -5,3 +5,4 @@ project(ptfuzzer)
 add_compile_options("-Wall")
 
 add_subdirectory(pt)
+add_subdirectory(msr)

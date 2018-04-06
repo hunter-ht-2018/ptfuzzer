@@ -73,7 +73,7 @@ int decdigits[] = {
 
 const char *program;
 
-void usage(void)
+static void usage(void)
 {
 	fprintf(stderr,
 		"Usage: %s [options] regno\n"
@@ -95,7 +95,7 @@ void usage(void)
 void rdmsr_on_cpu(uint32_t reg, int cpu);
 
 /* filter out ".", "..", "microcode" in /dev/cpu */
-int dir_filter(const struct dirent *dirp) {
+static int dir_filter(const struct dirent *dirp) {
 	if (isdigit(dirp->d_name[0]))
 		return 1;
 	else
@@ -118,7 +118,7 @@ void rdmsr_on_all_cpus(uint32_t reg)
 unsigned int highbit = 63, lowbit = 0;
 int mode = mo_hex;
 
-int main(int argc, char *argv[])
+int rdmsr_main(int argc, char *argv[])
 {
 	uint32_t reg;
 	int c;

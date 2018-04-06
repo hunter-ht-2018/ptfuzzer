@@ -314,7 +314,7 @@ private:
         //uint64_t old_count = count_tnt(tnt_cache_state);
 		std::cout << "tnt8: ";
 		//if (this->pge_enabled)
-		std::cout << start_decode << ", " << this->pge_enabled << std::endl;
+		//std::cout << start_decode << ", " << this->pge_enabled << std::endl;
 		if (this->start_decode && this->pge_enabled) {
         	//tnt_cache_t* tnt_cache = tnt_cache_init();
 			append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
@@ -403,5 +403,8 @@ bool init_pt_decorder();
 bool pt_trace_proc(int pid);
 void decode_pt_info();
 bool close_pt_trace(int pid);
-
+extern "C" {
+void wrmsr_on_all_cpus(uint32_t reg, int valcnt, char *regvals[]);
+void rdmsr_on_all_cpus(uint32_t reg);
+}
 #endif
