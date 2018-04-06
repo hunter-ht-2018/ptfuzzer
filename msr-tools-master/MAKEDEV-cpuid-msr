@@ -1,0 +1,11 @@
+#!/bin/sh
+msr_major=202
+cpuid_major=203
+n=0
+while [ $n -lt 32 ]; do
+    mkdir -m 0755 -p /dev/cpu/$n
+    mknod /dev/cpu/$n/msr -m 0600 c $msr_major $n
+    mknod /dev/cpu/$n/cpuid -m 0444 c $cpuid_major $n
+    n=`expr $n + 1`
+done
+

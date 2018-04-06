@@ -59,7 +59,6 @@ bool read_raw_bin()
 
 int main(int argc, char** argv)
 {
-
 	pt_fuzzer fuzzer("raw_bin", 4195296, 4195858, 0x400538);
 	fuzzer.init();
 
