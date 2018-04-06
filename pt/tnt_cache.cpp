@@ -91,6 +91,18 @@ uint8_t process_tnt_cache(tnt_cache_t* self){
 	return TNT_EMPTY;
 }
 
+uint32_t count_tnt_bits(bool short_tnt, uint64_t data) {
+	uint8_t bits = 0;
+	if(short_tnt){
+		/* Short TNT magic  */ 
+		bits = asm_bsr(data)-SHORT_TNT_OFFSET;
+	}
+	else{
+		/* Long TNT magic  */ 
+		bits = asm_bsr(data)-LONG_TNT_MAX_BITS;
+	}
+	return bits;
+}
 
 void append_tnt_cache(tnt_cache_t* self, bool short_tnt, uint64_t data){
 	tnt_cache_obj* new_tnt;

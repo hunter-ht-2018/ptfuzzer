@@ -2383,7 +2383,7 @@ static u8 run_target(char** argv, u32 timeout) {
     }
     else{
       //printf("这是父进程,进程标识符是%d\n",getpid());
-      
+      /*
       if(perf_config(child_pid, &run) == false)
       {
         printf("Config failed\n");
@@ -2401,7 +2401,7 @@ static u8 run_target(char** argv, u32 timeout) {
       pt_trace_bits = get_trace_bits();
 
       memcpy(trace_bits, pt_trace_bits, MAP_SIZE);
-      
+      */
       // if(waitpid(child_pid, &status, 0) <= 0)
       // {
       //   perror("Error: ");
@@ -7819,7 +7819,7 @@ bool read_raw_bin()
 void last_free_memory()
 {
 	free(raw_bin_buf);
-	pt_decoder_destroy(run.decoder);
+	//pt_decoder_destroy(run.decoder);
 }
 
 #ifndef AFL_LIB
@@ -7846,7 +7846,10 @@ int main(int argc, char** argv) {
   gettimeofday(&tv, &tz);
   srandom(tv.tv_sec ^ tv.tv_usec ^ getpid());
 
-  while ((opt = getopt(argc, argv, "+i:o:f:m:t:T:dnCB:S:M:x:Q")) > 0)
+  char* raw_bin;
+  uint64_t max_addr, min_addr, entry_point;
+
+  while ((opt = getopt(argc, argv, "+i:o:f:m:t:T:dnCB:S:M:x:Q:r:l:h:e:")) > 0)
 
     switch (opt) {
 
@@ -8014,6 +8017,26 @@ int main(int argc, char** argv) {
 
         break;
 
+      case 'r':
+        raw_bin = optarg;
+        printf("raw_bin: %s\n", raw_bin);
+        break;
+
+      case 'l':
+        min_addr = strtoul(optarg, NULL, 0);
+        printf("min_addr: %d\n", min_addr);
+        break;
+
+      case 'h':
+        max_addr = strtoul(optarg, NULL, 0);
+        printf("max_addr: %d\n", max_addr);
+        break;
+
+      case 'e':
+        entry_point = strtoul(optarg, NULL, 0);
+        printf("entry_point: %d\n", entry_point);
+        break;
+
       default:
 
         usage(argv[0]);
@@ -8073,7 +8096,7 @@ int main(int argc, char** argv) {
     waitpid(child_pid, NULL, 0);
 
   //initial perf
-
+/*
   if(perf_init() == false)
   {
     printf("Initial perf failed\n");
@@ -8102,7 +8125,7 @@ int main(int argc, char** argv) {
 		exit(1);
   }
 
-
+*/
   save_cmdline(argc, argv);
 
   fix_up_banner(argv[optind]);

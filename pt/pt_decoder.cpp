@@ -301,10 +301,10 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		std::cout << "not start_decode, return." << std::endl;
 		return 0;
 	}
-	if(count_tnt(tnt_cache_state) == 0){
-		std::cout << "tnt cache is empty, return." << std::endl;
-		return 0;
-	}
+	//if(count_tnt(tnt_cache_state) == 0){
+	//	std::cout << "tnt cache is empty, return." << std::endl;
+	//	return 0;
+	//}
 
 	std::cout << "calling decode_tnt for entry_point: " << std::hex << entry_point << std::endl;
 	cofi_obj = this->cofi_map[entry_point];
@@ -313,7 +313,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
 		return 0;
 	}
-	
+	alter_bitmap(entry_point);
     std::cout << "decode_tnt: before while, start_decode = " << this->start_decode << std::endl; 
 	while(true) {
 		if(cofi_obj == nullptr){
@@ -340,6 +340,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		                std::cerr << "error: tnt target out of bounds, inst address = " << std::hex << cofi_obj->inst_addr << ", target = " << target_addr << std::endl;
 						return num_tnt_decoded;
 		            }
+		            alter_bitmap(target_addr);
 					cofi_obj = cofi_map[target_addr];
 		            
 					break;
@@ -356,6 +357,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 			case COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH: {
 				std::cout << "COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH: " << std::hex << cofi_obj->inst_addr << ", target = " << cofi_obj->target_addr << std::endl;
 				uint64_t target_addr = cofi_obj->target_addr;
+				alter_bitmap(target_addr);
 				cofi_obj = cofi_map[target_addr];
 				break;
 			}
@@ -604,7 +606,9 @@ void pt_packet_decoder::decode() {
 			return;
 		}
 	}
-    std::cout << "decode PT parckets finished." << std::endl;
+    std::cout << "all PT parckets are decoded." << std::endl;
+    std::cout << "number of TNT left undecoded: " << count_tnt(this->tnt_cache_state) << std::endl;
+
 }
 
 void pt_packet_decoder::flush(){

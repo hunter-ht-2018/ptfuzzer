@@ -233,6 +233,7 @@ public:
 	pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address, uint64_t entry_point);
 	~pt_packet_decoder();
 	void decode();
+	uint8_t* get_trace_bits() { return trace_bits; }
 private:
 	uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip);
 	inline void tip_handler(uint8_t** p, uint8_t** end){
@@ -247,10 +248,15 @@ private:
         }
         //if(this->start_decode) 
         std::cout << "tip: " << std::hex << tip << std::endl;
-        if(this->start_decode){
+        if(this->start_decode && this->last_tip != 0){
         	decode_tnt(this->last_tip);
         }
-        this->last_tip = tip;
+        if(out_of_bounds(tip)) {
+        	this->last_tip = 0;
+        }
+        else{
+        	this->last_tip = tip;
+		}
 	}
 
 	inline void tip_pge_handler(uint8_t** p, uint8_t** end){
@@ -263,6 +269,9 @@ private:
         }
         //if(this->start_decode) 
         std::cout << "tip_pge: " << std::hex << last_tip << std::endl;
+        if(out_of_bounds(last_tip)) {
+        	this->last_tip = 0;
+        }
 	}
 
 	inline void tip_pgd_handler(uint8_t** p, uint8_t** end){
@@ -278,10 +287,15 @@ private:
         }
         //if(this->start_decode) 
         std::cout << "tip_pgd: " << std::hex << tip << std::endl;
-        if(this->start_decode){
+        if(this->start_decode && this->last_tip != 0){
         	decode_tnt(this->last_tip);
         }
-        this->last_tip = tip;
+        if(out_of_bounds(tip)) {
+        	this->last_tip = 0;
+        }
+        else{
+        	this->last_tip = tip;
+		}
 	}
 
 	inline void tip_fup_handler(uint8_t** p, uint8_t** end){
@@ -296,10 +310,15 @@ private:
         }
         //if(this->start_decode) 
         std::cout << "tip_fup: " << std::hex << tip << std::endl;
-        if(this->start_decode){
+        if(this->start_decode && this->last_tip != 0){
         	decode_tnt(this->last_tip);
     	}
-        this->last_tip = tip;
+        if(out_of_bounds(tip)) {
+        	this->last_tip = 0;
+        }
+        else{
+        	this->last_tip = tip;
+		}
 
 	}
 
@@ -312,15 +331,17 @@ private:
     void print_tnt(tnt_cache_t* tnt_cache);
 	inline void tnt8_handler(uint8_t** p){
         //uint64_t old_count = count_tnt(tnt_cache_state);
-		std::cout << "tnt8: ";
+		std::cout << "tnt8: " << count_tnt_bits(true, (uint64_t)(**p)) << std::endl;
 		//if (this->pge_enabled)
 		//std::cout << start_decode << ", " << this->pge_enabled << std::endl;
 		if (this->start_decode && this->pge_enabled) {
         	//tnt_cache_t* tnt_cache = tnt_cache_init();
-			append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
-        	//print_tnt(tnt_cache_state);
-        	std::cout << "count_tnt: " << count_tnt(tnt_cache_state) << std::endl;
-        	//tnt_cache_destroy(tnt_cache);
+        	if(this->last_tip != 0){
+				append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
+				//print_tnt(tnt_cache_state);
+        		std::cout << "count_tnt: " << count_tnt(tnt_cache_state) << std::endl;
+        		//tnt_cache_destroy(tnt_cache);
+			}
         }
         //uint64_t new_count = count_tnt(tnt_cache_state);
         //std::cout << new_count - old_count << std::endl;
@@ -328,11 +349,13 @@ private:
 	}
 
 	inline void long_tnt_handler(uint8_t** p){
-		std::cout << "long tnt: ";
+		std::cout << "long tnt: " << count_tnt_bits(true, (uint64_t)(**p)) << std::endl;;
 		if (this->start_decode && this->pge_enabled) {
         	//tnt_cache_t* tnt_cache = tnt_cache_init();
-	        append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
-        	print_tnt(tnt_cache_state);
+        	if(this->last_tip != 0){
+	        	append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
+        		std::cout << "count_tnt: " << count_tnt(tnt_cache_state) << std::endl;
+        	}
         	//tnt_cache_destroy(tnt_cache);
     	}
 		(*p) += PT_PKT_LTNT_LEN;

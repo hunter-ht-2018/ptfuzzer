@@ -6,3 +6,5 @@ add_compile_options("-Wall")
 
 add_subdirectory(pt)
 add_subdirectory(msr)
+add_subdirectory(afl-pt)
+

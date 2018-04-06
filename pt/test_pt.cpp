@@ -59,7 +59,16 @@ bool read_raw_bin()
 
 int main(int argc, char** argv)
 {
-	pt_fuzzer fuzzer("raw_bin", 4195296, 4195858, 0x400538);
+    if(argc < 5) {
+        std::cout << argv[0] << " <raw_bin> <min_addr> <max_addr> <entry_point>" << std::endl;
+        exit(0);
+    }
+    char* raw_bin = argv[1];
+    uint64_t min_addr = strtoul(argv[2], nullptr, 0);
+    uint64_t max_addr = strtoul(argv[3], nullptr, 0);
+    uint64_t entry_point = strtoul(argv[4], nullptr, 0);
+
+	pt_fuzzer fuzzer(raw_bin, min_addr, max_addr, entry_point);
 	fuzzer.init();
 
 

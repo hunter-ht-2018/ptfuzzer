@@ -58,5 +58,6 @@ bool is_empty_tnt_cache(tnt_cache_t* self);
 int count_tnt(tnt_cache_t* self);
 uint8_t process_tnt_cache(tnt_cache_t* self);
 void append_tnt_cache(tnt_cache_t* self, bool short_tnt, uint64_t data);
+uint32_t count_tnt_bits(bool short_tnt, uint64_t data);
 
 #endif 
