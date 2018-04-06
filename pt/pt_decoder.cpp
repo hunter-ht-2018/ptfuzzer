@@ -56,7 +56,8 @@ static ssize_t files_readFileToBufMax(char* fileName, uint8_t* buf, size_t fileM
 pt_fuzzer::pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point) :
 	raw_binary_file(raw_binary_file), base_address(base_address), max_address(max_address), entry_point(entry_point),
 	code(nullptr) , trace(nullptr){
-
+	std::cout << "init pt fuzzer: raw_binary_file = " << raw_binary_file << ", min_address = " << base_address
+				<< ", max_address = " << max_address << ", entry_point = " << entry_point << std::endl;
 }
 
 bool pt_fuzzer::config_pt() {
@@ -77,6 +78,9 @@ bool pt_fuzzer::config_pt() {
 
 bool pt_fuzzer::load_binary() {
     FILE* pt_file = fopen(this->raw_binary_file.c_str(), "rb");
+    if(pt_file == nullptr) {
+    	return false;
+    }
     uint64_t code_size = this->max_address - this->base_address;
     this->code = (uint8_t*)malloc(code_size);
     memset(this->code, 0, code_size);
@@ -619,3 +623,27 @@ void pt_packet_decoder::flush(){
 	this->in_range = false;
 }
 
+
+extern "C" {
+pt_fuzzer* the_fuzzer;
+void init_pt_fuzzer(char* raw_bin_file, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point){
+	if(raw_bin_file == nullptr) {
+		std::cerr << "raw binary file not set." << std::endl;
+		exit(-1);
+	}
+	if(min_addr == 0 || max_addr == 0 || entry_point == 0) {
+		std::cerr << "min_addr, max_addr or entry_point not set." << std::endl;
+		exit(-1);
+	}
+	the_fuzzer = new pt_fuzzer(raw_bin_file, min_addr, max_addr, entry_point);
+	the_fuzzer->init();
+}
+void start_pt_fuzzer(int pid){
+	the_fuzzer->start_pt_trace(pid);
+}
+
+void stop_pt_fuzzer(){
+	the_fuzzer->stop_pt_trace();
+}
+
+}
