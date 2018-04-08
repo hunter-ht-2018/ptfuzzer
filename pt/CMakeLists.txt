@@ -10,3 +10,8 @@ target_link_libraries(test_pt pt msr capstone)
 add_executable(test_disassemble test_disassemble.cpp)
 target_link_libraries(test_disassemble pt capstone)
 
+install(TARGETS pt test_pt test_disassemble
+		RUNTIME DESTINATION .
+		ARCHIVE DESTINATION .
+)
+

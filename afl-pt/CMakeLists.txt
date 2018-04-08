@@ -9,3 +9,7 @@ set ( CMAKE_CXX_FLAGS " -std=c++11 -g -fpermissive -D_FILE_OFFSET_BITS=64 -Wall 
 set(SRC afl-ptfuzz.c)
 add_executable(afl-ptfuzz ${SRC})
 target_link_libraries(afl-ptfuzz pt msr capstone dl)
+
+install(TARGETS afl-ptfuzz
+		RUNTIME DESTINATION .
+)

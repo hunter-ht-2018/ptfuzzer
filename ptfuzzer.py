@@ -5,8 +5,8 @@ from capstone import *
 import argparse
 import os
 
-raw_bin_file = "./.tmp_raw_bin"
-afl_bin = "./pt/test_pt"
+raw_bin_file = "./build/ptest/readelf"
+afl_bin = "./build/afl-ptfuzz"
 
 parser = argparse.ArgumentParser(description='Process bin name.')
 parser.add_argument('string', type= str, help='bin name')
