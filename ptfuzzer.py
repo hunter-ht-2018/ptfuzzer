@@ -7,16 +7,23 @@ import os
 
 raw_bin_file = "./build/ptest/readelf"
 afl_bin = "./build/afl-ptfuzz"
+target_args = ""
+afl_args = "-t 999999 -i ./build/ptest/in -o ./build/ptest/out"
+target_args = "-a"
 
-parser = argparse.ArgumentParser(description='Process bin name.')
-parser.add_argument('string', type= str, help='bin name')
-args = parser.parse_args()
+raw_bin = raw_bin_file+".text"
 
-ld = cle.Loader(args.string)
+# parser = argparse.ArgumentParser(description='Process bin name.')
+# parser.add_argument('string', type= str, help='bin name')
+# args = parser.parse_args()
 
-f = open(raw_bin_file, "wb")
+# ld = cle.Loader(args.string)
+
+ld = cle.Loader(raw_bin_file)
+
+f = open(raw_bin, "wb")
 if not f:
-	print "open file " + raw_bin_file + " for writing failed."
+	print "open file " + raw_bin + " for writing failed."
 	
 bin_code = ""
 
@@ -37,9 +44,12 @@ for i in ld.main_object.sections:
 f.write(bin_code)
 f.close()
 
-cmdline = "%s %s %d %d %d" % (afl_bin, raw_bin_file, min_addr, max_addr, entry)
+cmdline = "sudo %s -r %s -l %d -h %d -e %d %s %s %s @@" % (afl_bin, raw_bin, min_addr, max_addr, entry, afl_args, raw_bin_file, target_args)
 print cmdline
 os.system(cmdline)
+
+
+
 #faddr = open("./min_max.txt", "w")
 #faddr.write(str(min_addr) + "\n" + str(max_addr) + "\n" + str(entry))
 #faddr.close()
