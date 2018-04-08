@@ -35,6 +35,7 @@
 #include <wait.h>
 #include <iostream>
 #include "disassembler.h"
+#include "pt_ext.h"
 //~ #include "tnt_cache.h"
 
 /* Size (in bytes) for report data to be stored in stack before written to file */
@@ -423,13 +424,4 @@ private:
 
 };
 
-extern "C"{
-void init_pt_fuzzer(char* raw_bin_file, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point);
-void start_pt_fuzzer(int pid);
-void stop_pt_fuzzer();
-}
-extern "C" {
-void wrmsr_on_all_cpus(uint32_t reg, int valcnt, char *regvals[]);
-void rdmsr_on_all_cpus(uint32_t reg);
-}
 #endif

@@ -31,9 +31,10 @@
 #include "debug.h"
 #include "alloc-inl.h"
 #include "hash.h"
-#include "pt.h"
+#include "pt_ext.h"
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -81,12 +82,12 @@
    really makes no sense to haul them around as function parameters. */
 
 //global variables
-run_t run = {
-        .pid = 0,
-        .persistentPid = 0,
-        .persistentSock = -1,
-        .tmOutSignaled = false
-};
+// run_t run = {
+//         .pid = 0,
+//         .persistentPid = 0,
+//         .persistentSock = -1,
+//         .tmOutSignaled = false
+// };
 
 uint64_t min_addr_cle, max_addr_cle, entry_point_cle;
 uint8_t* raw_bin_buf;
@@ -2382,7 +2383,7 @@ static u8 run_target(char** argv, u32 timeout) {
 
     }
     else{
-      start_pt_fuzzer();
+      start_pt_fuzzer(child_pid);
       if (waitpid(child_pid, &status, 0) <= 0) PFATAL("waitpid() failed");
       stop_pt_fuzzer();
       //printf("这是父进程,进程标识符是%d\n",getpid());
