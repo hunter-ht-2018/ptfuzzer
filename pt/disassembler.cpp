@@ -571,7 +571,9 @@ uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t
 			}
 			else {
 				current_cofi->target_addr = 0;
+#ifdef DEBUG
 				printf("%lx:\t(%d)\t%s\t%s\t\t\n", insn->address, type, insn->mnemonic, insn->op_str);
+#endif	
 			}
 			current_cofi->next_cofi = nullptr;
 			cofi_map[insn->address] = current_cofi;

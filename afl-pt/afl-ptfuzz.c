@@ -2385,7 +2385,7 @@ static u8 run_target(char** argv, u32 timeout) {
     else{
       start_pt_fuzzer(child_pid);
       if (waitpid(child_pid, &status, 0) <= 0) PFATAL("waitpid() failed");
-      stop_pt_fuzzer();
+      memcpy(trace_bits, stop_pt_fuzzer(), MAP_SIZE);
       //printf("这是父进程,进程标识符是%d\n",getpid());
       /*
       if(perf_config(child_pid, &run) == false)

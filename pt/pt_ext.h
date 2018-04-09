@@ -6,7 +6,7 @@ extern "C"{
 #endif
 void init_pt_fuzzer(char* raw_bin_file, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point);
 void start_pt_fuzzer(int pid);
-void stop_pt_fuzzer();
+uint8_t* stop_pt_fuzzer();
 
 void wrmsr_on_all_cpus(uint32_t reg, int valcnt, char *regvals[]);
 void rdmsr_on_all_cpus(uint32_t reg);
