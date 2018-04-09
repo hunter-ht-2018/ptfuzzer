@@ -145,10 +145,10 @@ void pt_fuzzer::start_pt_trace(int pid) {
     std::cout << "open PT event OK." << std::endl;
 #endif
 
-	if(!trace->start_trace()){
-		std::cerr << "start PT event failed." << std::endl;
-		exit(-1);
-	}
+	// if(!trace->start_trace()){
+	// 	std::cerr << "start PT event failed." << std::endl;
+	// 	exit(-1);
+	// }
 #ifdef DEBUG
 	std::cout << "after start_trace" << std::endl;
 #endif
@@ -160,7 +160,7 @@ void pt_fuzzer::start_pt_trace(int pid) {
 }
 
 uint8_t* pt_fuzzer::stop_pt_trace() {
-	if(!trace->stop_trace()){
+	if(!this->trace->stop_trace()){
 		std::cerr << "stop PT event failed." << std::endl;
 		exit(-1);
 	}
@@ -172,6 +172,7 @@ uint8_t* pt_fuzzer::stop_pt_trace() {
 #ifdef DEBUG
     std::cout << "decode finished, total number of decoded branch: " << decoder.num_decoded_branch << std::endl;
 #endif
+	this->trace->close_pt();
 	delete this->trace;
 	this->trace = nullptr;
 	return decoder.get_trace_bits();
@@ -207,10 +208,10 @@ bool pt_tracer::open_pt(int pt_perf_type) {
         printf("perf_event_open() failed\n");
         return false;
     }
-    char* reg_value[2] = {"0x100002908", nullptr};
 #ifdef DEBUG
     std::cout << "before wrmsr" << std::endl;
 #endif
+    //char* reg_value[2] = {"0x100002908", nullptr};
     //rdmsr_on_all_cpus(0x570);
     //wrmsr_on_all_cpus(0x570, 1, reg_value);
 #ifdef DEBUG
@@ -261,6 +262,14 @@ bool pt_tracer::open_pt(int pt_perf_type) {
     return true;
 }
 
+void pt_tracer::close_pt() {
+	munmap(this->perf_pt_aux, _HF_PERF_AUX_SZ);
+	this->perf_pt_aux = NULL;
+	munmap(this->perf_pt_header, _HF_PERF_MAP_SZ + getpagesize());
+	this->perf_pt_header = NULL;
+	close(perf_fd);
+}
+
 pt_tracer::pt_tracer(int pid) : trace_pid(pid), perf_pt_header(nullptr), perf_pt_aux(nullptr) {
 
 }
@@ -293,6 +302,7 @@ pt_packet_decoder::pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_a
 	aux_tail = ATOMIC_GET(pem->aux_tail);
 	aux_head = ATOMIC_GET(pem->aux_head);
 	trace_bits = (uint8_t*)malloc(MAP_SIZE * sizeof(uint8_t));
+	memset(trace_bits, 0, MAP_SIZE);
     tnt_cache_state = tnt_cache_init();
 #ifdef DEBUG
     std::cout << "app_entry_point = " << app_entry_point << std::endl;
@@ -498,9 +508,7 @@ uint64_t pt_packet_decoder::get_ip_val(unsigned char **pp, unsigned char *end, i
 
 static inline void print_unknown(unsigned char* p, unsigned char* end)
 {
-#ifdef DEBUG
 	printf("unknown packet: ");
-#endif
 	unsigned len = end - p;
 	int i;
 	if (len > 16)
@@ -680,8 +688,8 @@ void pt_packet_decoder::decode() {
 				}
 			}
 
-			print_unknown(p, end);
 #ifdef DEBUG
+			print_unknown(p, end);
             std::cout << "unknow pt packets." << std::endl;
 #endif
 			return;

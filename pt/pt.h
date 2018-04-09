@@ -431,7 +431,7 @@ public:
 	bool open_pt(int pt_perf_type);
 	bool start_trace();
 	bool stop_trace();
-	bool close_pt();
+	void close_pt();
 	uint8_t* get_perf_pt_header() { return perf_pt_header; }
 	uint8_t* get_perf_pt_aux() { return perf_pt_aux; }
 };
