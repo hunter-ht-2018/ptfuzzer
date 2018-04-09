@@ -33,6 +33,9 @@ along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <map>
+#include <string>
+
 //~ #include "qemu/osdep.h"
 #include "khash.h"
 #include "tnt_cache.h"
@@ -83,10 +86,40 @@ typedef struct disassembler_s{
 
 } disassembler_t;
 
+//#define DEBUG_COFI_INST
+typedef struct _cofi_inst_t {
+	cofi_type type;
+	uint64_t inst_addr;
+	uint64_t target_addr;
+	struct _cofi_inst_t* next_cofi;
+#ifdef DEBUG_COFI_INST
+	std::string dis_inst;
+#endif
+} cofi_inst_t;
+
+class my_cofi_map {
+	cofi_inst_t** map_data;
+	uint64_t base_address;
+	uint32_t code_size;
+public:
+	my_cofi_map(uint64_t base_address, uint32_t code_size) : base_address(base_address), code_size(code_size) {
+		map_data = (cofi_inst_t**)malloc(sizeof(cofi_inst_t*) * code_size);
+	}
+	~my_cofi_map() {
+		free(map_data);
+	}
+	inline cofi_inst_t*& operator [](uint64_t addr) {
+		return map_data[addr-base_address];
+	}
+};
+
+typedef std::map<uint64_t, cofi_inst_t*> cofi_map_t;
+
 disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point, void (*handler)(uint64_t));
 bool reset_disassembler(disassembler_t* self);
 bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tnt_cache_t* tnt_cache_state);
 void destroy_disassembler(disassembler_t* self);
 void free_list(cofi_list* head);
 
+uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t max_address, cofi_map_t& cofi_map);
 #endif
