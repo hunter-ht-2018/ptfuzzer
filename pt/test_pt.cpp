@@ -99,7 +99,9 @@ int main(int argc, char** argv)
 		fuzzer.start_pt_trace(pid);
 		int status;
 		waitpid(pid, &status, 0);
-		fuzzer.stop_pt_trace();
+        uint8_t *a;
+        a = (uint8_t*)malloc(MAP_SIZE * sizeof(uint8_t));
+		fuzzer.stop_pt_trace(a);
         printf("\n\n");
 	}
 

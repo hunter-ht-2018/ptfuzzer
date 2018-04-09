@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <wait.h>
 #include <iostream>
+#include <chrono>
 #include "disassembler.h"
 #include "pt_ext.h"
 //~ #include "tnt_cache.h"
@@ -452,7 +453,10 @@ public:
 	pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);
 	void init();
 	void start_pt_trace(int pid);
-	uint8_t* stop_pt_trace();
+	void stop_pt_trace(uint8_t *trace_bits);
+	std::chrono::time_point<std::chrono::steady_clock> start;
+	std::chrono::time_point<std::chrono::steady_clock> end;
+	std::chrono::duration<double> diff;
 private:
 	bool load_binary();
 	bool build_cofi_map();

@@ -159,7 +159,7 @@ void pt_fuzzer::start_pt_trace(int pid) {
 #endif
 }
 
-uint8_t* pt_fuzzer::stop_pt_trace() {
+void pt_fuzzer::stop_pt_trace(uint8_t *trace_bits) {
 	if(!this->trace->stop_trace()){
 		std::cerr << "stop PT event failed." << std::endl;
 		exit(-1);
@@ -175,7 +175,7 @@ uint8_t* pt_fuzzer::stop_pt_trace() {
 	this->trace->close_pt();
 	delete this->trace;
 	this->trace = nullptr;
-	return decoder.get_trace_bits();
+	memcpy(trace_bits, decoder.get_trace_bits(), MAP_SIZE);
 }
 
 bool pt_tracer::open_pt(int pt_perf_type) {
@@ -729,10 +729,20 @@ void init_pt_fuzzer(char* raw_bin_file, uint64_t min_addr, uint64_t max_addr, ui
 }
 void start_pt_fuzzer(int pid){
 	the_fuzzer->start_pt_trace(pid);
+	// the_fuzzer->start = std::chrono::steady_clock::now();
 }
 
-uint8_t* stop_pt_fuzzer(){
-	return the_fuzzer->stop_pt_trace();
+void stop_pt_fuzzer(uint8_t *trace_bits){
+	// the_fuzzer->end = std::chrono::steady_clock::now();
+	// the_fuzzer->diff = the_fuzzer->end - the_fuzzer->start;
+
+	// std::cout << "Time of exec: " << the_fuzzer->diff.count()*1000000000 << std::endl;
+	// the_fuzzer->start = std::chrono::steady_clock::now();
+	the_fuzzer->stop_pt_trace(trace_bits);
+	// the_fuzzer->end = std::chrono::steady_clock::now();
+	// the_fuzzer->diff = the_fuzzer->end - the_fuzzer->start;
+
+	// std::cout << "Time of decode: " << the_fuzzer->diff.count()*1000000000 << std::endl;
 }
 
 }
