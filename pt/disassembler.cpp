@@ -279,7 +279,7 @@ static cofi_list* analyse_assembly(disassembler_t* self, uint64_t base_address){
 	cofi_list* first = NULL;
 				
 	if (cs_open(CS_ARCH_X86, CS_MODE_64, &handle) != CS_ERR_OK)
-		return false;
+		return nullptr;
 	
 	cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 	insn = cs_malloc(handle);
