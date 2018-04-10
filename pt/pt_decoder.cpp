@@ -729,20 +729,22 @@ void init_pt_fuzzer(char* raw_bin_file, uint64_t min_addr, uint64_t max_addr, ui
 }
 void start_pt_fuzzer(int pid){
 	the_fuzzer->start_pt_trace(pid);
-	// the_fuzzer->start = std::chrono::steady_clock::now();
+	the_fuzzer->start = std::chrono::steady_clock::now();
 }
 
 void stop_pt_fuzzer(uint8_t *trace_bits){
-	// the_fuzzer->end = std::chrono::steady_clock::now();
-	// the_fuzzer->diff = the_fuzzer->end - the_fuzzer->start;
-
-	// std::cout << "Time of exec: " << the_fuzzer->diff.count()*1000000000 << std::endl;
-	// the_fuzzer->start = std::chrono::steady_clock::now();
+	the_fuzzer->end = std::chrono::steady_clock::now();
+	the_fuzzer->diff = the_fuzzer->end - the_fuzzer->start;
+#ifdef DEBUG
+	std::cout << "Time of exec: " << the_fuzzer->diff.count()*1000000000 << std::endl;
+#endif
+	the_fuzzer->start = std::chrono::steady_clock::now();
 	the_fuzzer->stop_pt_trace(trace_bits);
-	// the_fuzzer->end = std::chrono::steady_clock::now();
-	// the_fuzzer->diff = the_fuzzer->end - the_fuzzer->start;
-
-	// std::cout << "Time of decode: " << the_fuzzer->diff.count()*1000000000 << std::endl;
+	the_fuzzer->end = std::chrono::steady_clock::now();
+	the_fuzzer->diff = the_fuzzer->end - the_fuzzer->start;
+#ifdef DEBUG
+	std::cout << "Time of decode: " << the_fuzzer->diff.count()*1000000000 << std::endl;
+#endif
 }
 
 }
