@@ -11,20 +11,25 @@ as usual.
 * **PTfuzzer.** We implement a prototype called PTfuzzer based on these insights. And our experiments show that PTfuzzer can deal with binary-only fuzzing quickly and accurately.
 
 ## Requirements
+
 * linux kernel >= 4.7.0
 * Intel CPU i5/6/7-x000, x >= 5
 * libcapstone
 * python-cle
 
 ## How to install
-```shell
+
+```
 cd ptfuzzer/
-sudo ./check_dep.sh
-./install_pt.sh
+mkdir build
+cd build
+cmake ../
+make
+make install
 ```
 ## How to run
 
-You need to open the performance switch of the system everytime you reboot the system.
+* You need to open the performance switch of the system everytime you reboot the system.
 ```
 su
 echo core >/proc/sys/kernel/core_pattern
@@ -34,7 +39,9 @@ echo performance | tee cpu*/cpufreq/scaling_governor
 
 
 * Prepare a your own target program and initial seed files
-* cd ptfuzzer/afl-pt/
-* sudo ./afl-fuzz -i your/input/directory -o your/output/directory your/target/program -parameter @@
-* (e.g. sudo ./afl-fuzz -i readelf_in -o readelf_out readelf -a @@)
-* Please refer to ptfuzzer/afl-pt/doc/ if you need more information
+```
+cd ptfuzzer/
+python ptfuzzer.py "-i your/input/directory -o your/output/directory" "your/target/program -arguement"
+```
+* e.g. python ptfuzzer.py "-i ./test/in -o ./test/out" "./test/readelf -a"
+* Please refer to ptfuzzer/afl-pt/doc/ if you need more information and about AFL arguements
