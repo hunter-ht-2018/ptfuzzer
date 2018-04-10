@@ -145,10 +145,10 @@ void pt_fuzzer::start_pt_trace(int pid) {
     std::cout << "open PT event OK." << std::endl;
 #endif
 
-	// if(!trace->start_trace()){
-	// 	std::cerr << "start PT event failed." << std::endl;
-	// 	exit(-1);
-	// }
+	if(!trace->start_trace()){
+		std::cerr << "start PT event failed." << std::endl;
+		exit(-1);
+	}
 #ifdef DEBUG
 	std::cout << "after start_trace" << std::endl;
 #endif
