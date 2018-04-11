@@ -1,23 +1,32 @@
 #arg_parse.py
 #coding:utf-8
+import argparse
 import cle
 from capstone import *
 import argparse
 import os
 
-raw_bin_file = "./build/ptest/readelf"
-afl_bin = "./build/afl-ptfuzz"
+parser = argparse.ArgumentParser(description = 'Process arguements and bin name.')
+parser.add_argument('afl_args', type = str, help = 'arguements of AFL')
+parser.add_argument('target', type = str, help = 'target bin name and arguements of target bin')
+args = parser.parse_args()
+
+raw_bin_file = ""
 target_args = ""
-afl_args = "-t 999999 -i ./build/ptest/in -o ./build/ptest/out"
-target_args = "-a"
+
+p = 0
+while p < len(args.target):
+	if args.target[p] == " ":
+		break
+	raw_bin_file += args.target[p]
+	p += 1
+if p < len(args.target) - 1:
+	target_args = args.target[p+1 : len(args.target)]
+
+afl_bin = "./build/afl-ptfuzz"
+afl_args = args.afl_args
 
 raw_bin = raw_bin_file+".text"
-
-# parser = argparse.ArgumentParser(description='Process bin name.')
-# parser.add_argument('string', type= str, help='bin name')
-# args = parser.parse_args()
-
-# ld = cle.Loader(args.string)
 
 ld = cle.Loader(raw_bin_file)
 
