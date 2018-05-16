@@ -2299,6 +2299,12 @@ static u8 run_target(char** argv, u32 timeout) {
       // printf("%s\n", argv);
       // printf("%s\n", target_path);
 
+    int aa_pipe_fd[2];
+    if(pipe(aa_pipe_fd)<0)
+    {
+      printf("Fail to create pipe!!");
+      return -1;
+    }
 
 
 
@@ -2307,9 +2313,11 @@ static u8 run_target(char** argv, u32 timeout) {
     if (child_pid < 0) PFATAL("fork() failed");
 
     if (!child_pid) {
-
+      char buf[1];
       //printf("这是子进程,进程标识符是%d\n",getpid());
-
+      read(aa_pipe_fd[0], buf, sizeof(buf));
+      close(aa_pipe_fd[1]);
+      close(aa_pipe_fd[0]);
       struct rlimit r;
 
       if (mem_limit) {
@@ -2385,8 +2393,11 @@ static u8 run_target(char** argv, u32 timeout) {
     }
     else{
       start_pt_fuzzer(child_pid);
+      write(aa_pipe_fd[1],"s",strlen("s"));
       if (waitpid(child_pid, &status, 0) <= 0) PFATAL("waitpid() failed");
       stop_pt_fuzzer(trace_bits);
+      close(aa_pipe_fd[0]);
+      close(aa_pipe_fd[1]);
       //printf("这是父进程,进程标识符是%d\n",getpid());
       /*
       if(perf_config(child_pid, &run) == false)
@@ -8031,17 +8042,17 @@ int main(int argc, char** argv) {
 
       case 'l':
         min_addr = strtoul(optarg, NULL, 0);
-        printf("min_addr: %d\n", min_addr);
+        printf("min_addr: %ld\n", min_addr);
         break;
 
       case 'h':
         max_addr = strtoul(optarg, NULL, 0);
-        printf("max_addr: %d\n", max_addr);
+        printf("max_addr: %ld\n", max_addr);
         break;
 
       case 'e':
         entry_point = strtoul(optarg, NULL, 0);
-        printf("entry_point: %d\n", entry_point);
+        printf("entry_point: %ld\n", entry_point);
         break;
 
       default:
@@ -8136,6 +8147,26 @@ int main(int argc, char** argv) {
   }
 
 */
+
+#ifdef DEBUG
+  std::cout << "before wrmsr" << std::endl;
+#endif
+  char base_address[20];
+  char max_address[20];
+  sprintf(base_address,"%ld",min_addr);
+  sprintf(max_address,"%ld",max_addr);
+  char* reg_value[2] = {base_address, NULL};
+  wrmsr_on_all_cpus(0x580, 1, reg_value);
+
+  reg_value[0] = max_address;
+  wrmsr_on_all_cpus(0x581, 1, reg_value);
+
+#ifdef DEBUG
+  rdmsr_on_all_cpus(0x580);
+  rdmsr_on_all_cpus(0x581);
+  std::cout << "after wrmsr" << std::endl;
+#endif
+
   save_cmdline(argc, argv);
 
   fix_up_banner(argv[optind]);

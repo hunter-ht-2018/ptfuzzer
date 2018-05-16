@@ -6,6 +6,7 @@ from capstone import *
 import argparse
 import os
 
+
 parser = argparse.ArgumentParser(description = 'Process arguements and bin name.')
 parser.add_argument('afl_args', type = str, help = 'arguements of AFL')
 parser.add_argument('target', type = str, help = 'target bin name and arguements of target bin')
@@ -13,6 +14,7 @@ args = parser.parse_args()
 
 raw_bin_file = ""
 target_args = ""
+
 
 p = 0
 while p < len(args.target):
@@ -33,18 +35,19 @@ ld = cle.Loader(raw_bin_file)
 f = open(raw_bin, "wb")
 if not f:
 	print "open file " + raw_bin + " for writing failed."
-	
-bin_code = ""
 
-entry = ld.main_object.entry
+bin_code = ""
+base_addr = 0x0
+entry = ld.main_object.entry + base_addr
 # 'data', 'header', 'is_null', 'name', 'stream'
+
 
 
 for i in ld.main_object.sections:
 	if i.name == ".text":
-		# print i.vaddr, i.filesize
-		min_addr = i.vaddr
-		max_addr = i.vaddr + i.filesize
+		print i.vaddr
+		min_addr = i.vaddr + base_addr
+		max_addr = i.vaddr + i.filesize + base_addr
 		raw_bytes = ld.memory.read_bytes(i.vaddr, i.filesize)
 		for byte in raw_bytes:
 			bin_code += byte
