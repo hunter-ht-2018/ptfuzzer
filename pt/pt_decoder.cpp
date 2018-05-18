@@ -3,6 +3,7 @@
 #include <linux/perf_event.h>
 #include <linux/hw_breakpoint.h>
 #include <assert.h>
+#include <vector>
 #include "pt.h"
 
 #define ATOMIC_POST_OR_RELAXED(x, y) __atomic_fetch_or(&(x), y, __ATOMIC_RELAXED)
@@ -176,6 +177,7 @@ void pt_fuzzer::stop_pt_trace(uint8_t *trace_bits) {
 	delete this->trace;
 	this->trace = nullptr;
 	memcpy(trace_bits, decoder.get_trace_bits(), MAP_SIZE);
+	num_runs ++;
 }
 
 bool pt_tracer::open_pt(int pt_perf_type) {
@@ -507,9 +509,11 @@ uint64_t pt_packet_decoder::get_ip_val(unsigned char **pp, unsigned char *end, i
 	return v;
 }
 
-
-
-
+void pt_packet_decoder::dump_control_flows(FILE* f) {
+	for(int i = 0; i < this->control_flows.size(); i ++) {
+		fprintf(f, "%p", control_flows[i]);
+	}
+}
 
 static inline void print_unknown(unsigned char* p, unsigned char* end)
 {

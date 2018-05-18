@@ -417,7 +417,13 @@ private:
 	    pos16 = (uint16_t)(last_ip16 ^ addr16);
 	    trace_bits[pos16]++;
 	    bitmap_last_ip = addr >> 1;
+#if _DEBUG_
+	    control_flows.push_back(addr);
+#endif
 	}
+private:
+	std::vector<uint64_t> control_flows;
+	void dump_control_flows(FILE* f);
 };
 
 
@@ -448,6 +454,8 @@ class pt_fuzzer {
 	uint8_t* code;
 
 	pt_tracer* trace;
+
+	uint64_t num_runs = 0;
 
 public:
 	pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);
