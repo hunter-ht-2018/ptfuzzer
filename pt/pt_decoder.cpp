@@ -210,7 +210,7 @@ bool pt_tracer::open_pt(int pt_perf_type) {
         printf("perf_event_open() failed\n");
         return false;
     }
-    if(ioctl(perf_fd, PERF_EVENT_IOC_SET_FILTER, "filter 0x580/580@/home/hunter/ptfuzzer/build/ptest/readelf") < 0){
+    if(ioctl(perf_fd, PERF_EVENT_IOC_SET_FILTER, "filter 0x580/580@/bin/bash") < 0){
         std::cerr << "set filter for fd " << perf_fd  << " failed." << std::endl;
         return false;
     }
