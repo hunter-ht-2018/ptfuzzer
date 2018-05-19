@@ -59,8 +59,8 @@ bool read_raw_bin()
 
 int main(int argc, char** argv)
 {
-    if(argc < 5) {
-        std::cout << argv[0] << " <raw_bin> <min_addr> <max_addr> <entry_point>" << std::endl;
+    if(argc <= 5) {
+        std::cout << argv[0] << " <raw_bin> <min_addr> <max_addr> <entry_point> <cmd_line>" << std::endl;
         exit(0);
     }
     char* raw_bin = argv[1];
@@ -68,33 +68,41 @@ int main(int argc, char** argv)
     uint64_t max_addr = strtoul(argv[3], nullptr, 0);
     uint64_t entry_point = strtoul(argv[4], nullptr, 0);
 
+    char* app_name = argv[5];
+    char** cmd_line = argv + 5;
+    std::cout << "application is: " << app_name << std::endl;
+    std::cout << "command line: ";
+    char** args = new char*[argc - 5];
+    int i = 0;
+    for(i = 0; i < argc - 5; i ++) {
+    	args[i] = cmd_line[i];
+    	std::cout << args[i] << " ";
+    }
+    args[i] = nullptr;
+    std::cout << std::endl;
+
 	pt_fuzzer fuzzer(raw_bin, min_addr, max_addr, entry_point);
 	fuzzer.init();
 
-
     pid_t pid;        //进程标识符
 	pid = fork();     //创建一个新的进程
-	if(pid < 0)
-	{
+	if(pid < 0) {
 		printf("创建进程失败!");
 		exit(1);
 	}
-	else if(pid == 0)   //如果pid为0则表示当前执行的是子进程
-	{
+	else if(pid == 0)   {//如果pid为0则表示当前执行的是子进程
 		std::cout << "child process start, pid is " << getpid() << "." << std::endl;
 		sleep(1);
         //std::string bin_file = "/home/guy/ptfuzzer/afl-pt/ptest/readelf";
         //std::string args = "-a /home/guy/ptfuzzer/afl-pt/ptest/in/small_exec.elf";
-        char* args[4] = {"test", "-a", "/home/zhouxu/ptfuzzer/afl-pt/ptest/in/small_exec.elf", nullptr};
+        //char* args[4] = {"test", "-a", "/home/zhouxu/ptfuzzer/afl-pt/ptest/in/small_exec.elf", nullptr};
 		int ret = execv("./test", args);
 	    if(ret == -1){
             std::cerr << "execv failed." << std::endl;
             exit(-1);
         }
     }
-
-	else          //否则为父进程
-	{
+	else {          //否则为父进程
 		printf("这是父进程,进程标识符是%d\n",getpid());
 		fuzzer.start_pt_trace(pid);
 		int status;
