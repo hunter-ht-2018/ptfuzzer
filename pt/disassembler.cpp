@@ -545,6 +545,7 @@ uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t
 	cofi_inst_t* current_cofi = nullptr;
 	cofi_inst_t* pre_cofi = nullptr;
 
+	uint64_t bb_start_addr;
 	while(cs_disasm_iter(handle, &code, &code_size, &address, insn)) {
 		if (insn->address > max_address){
 			break;
@@ -555,6 +556,7 @@ uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t
 
 		if(current_cofi == nullptr) {
 			current_cofi =  new cofi_inst_t;
+			current_cofi->bb_start_addr = insn->address;
 		}
 		if(pre_cofi != nullptr) {
 			if(pre_cofi->next_cofi == nullptr) {

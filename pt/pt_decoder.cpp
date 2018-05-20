@@ -383,7 +383,7 @@ void pt_packet_decoder::record_tip(uint64_t tip) {
 		std::cerr << "can not find cofi for tip: " << std::hex << "0x" << tip << std::endl;
 		return;
 	}
-	if(cofi_obj->inst_addr != tip) {
+	if(cofi_obj->bb_start_addr != tip) {
 		//std::cerr << "tip instruction not hit the first instruction of a basic block." << std::endl;
 	    //alter_bitmap(cofi_obj->inst_addr);
         printf( "tip = %p, inst_addr = %p\n", tip, cofi_obj->inst_addr);
