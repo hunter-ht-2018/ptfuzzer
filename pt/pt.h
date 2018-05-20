@@ -171,7 +171,7 @@ typedef struct {
     }linux_t;
     
     decoder_t* decoder;
-}run_t;
+} run_t;
 
 typedef enum {
     _HF_DYNFILE_NONE = 0x0,
@@ -180,8 +180,13 @@ typedef enum {
     _HF_DYNFILE_BTS_EDGE = 0x10,
     _HF_DYNFILE_IPT_BLOCK = 0x20,
     _HF_DYNFILE_SOFT = 0x40,
-}dynFileMethod_t;
+} dynFileMethod_t;
 
+typedef enum _branch_info_mode_t {
+	RAW_PACKET_MODE,
+	TIP_MODE,
+	TNT_MODE
+} branch_info_mode_t;
 
 bool perf_config(pid_t pid, run_t* run);
 bool perf_init();
@@ -230,12 +235,16 @@ class pt_packet_decoder{
 	cofi_map_t& cofi_map;
 	uint64_t bitmap_last_ip = 0;
 	uint8_t* trace_bits;
+
+	branch_info_mode_t branch_info_mode = TNT_MODE;
+
 public:
     uint64_t num_decoded_branch = 0;
+
 public:
 	pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address, uint64_t entry_point);
 	~pt_packet_decoder();
-	void decode();
+	void decode(branch_info_mode_t mode=TNT_MODE);
 	uint8_t* get_trace_bits() { return trace_bits; }
 private:
 	uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip);
@@ -459,13 +468,14 @@ class pt_fuzzer {
 
 	uint64_t num_runs = 0;
 	//pt_packet_decoder* decoder = nullptr;
+	branch_info_mode_t branch_info_mode = TNT_MODE;
 
 public:
 	pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);
-	void init();
+	void init(branch_info_mode_t mode=TNT_MODE);
 	void start_pt_trace(int pid);
 	void stop_pt_trace(uint8_t *trace_bits);
-	pt_packet_decoder* debug_stop_pt_trace(uint8_t *trace_bits);
+	pt_packet_decoder* debug_stop_pt_trace(uint8_t *trace_bits, branch_info_mode_t mode=TNT_MODE);
 	std::chrono::time_point<std::chrono::steady_clock> start;
 	std::chrono::time_point<std::chrono::steady_clock> end;
 	std::chrono::duration<double> diff;

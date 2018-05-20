@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 		waitpid(pid, &status, 0);
         uint8_t *a;
         a = (uint8_t*)malloc(MAP_SIZE * sizeof(uint8_t));
-        pt_packet_decoder* decoder = fuzzer.debug_stop_pt_trace(a);
+        pt_packet_decoder* decoder = fuzzer.debug_stop_pt_trace(a, TIP_MODE);
         FILE* f = fopen("control_inst_flow.txt", "w");
         if(f != nullptr) {
             std::cout << "start to write control flow to file." << std::endl;

@@ -110,7 +110,7 @@ bool pt_fuzzer::build_cofi_map() {
 	return true;
 }
 
-void pt_fuzzer::init() {
+void pt_fuzzer::init(branch_info_mode_t mode) {
 	if(!config_pt()) {
         std::cerr << "config PT failed." << std::endl;
 		exit(-1);
@@ -134,6 +134,8 @@ void pt_fuzzer::init() {
 #ifdef DEBUG
     std::cout << "build cofi map OK." << std::endl;
 #endif
+
+    this->branch_info_mode = mode;
 }
 
 void pt_fuzzer::start_pt_trace(int pid) {
@@ -180,7 +182,7 @@ void pt_fuzzer::stop_pt_trace(uint8_t *trace_bits) {
 	num_runs ++;
 }
 
-pt_packet_decoder* pt_fuzzer::debug_stop_pt_trace(uint8_t *trace_bits) {
+pt_packet_decoder* pt_fuzzer::debug_stop_pt_trace(uint8_t *trace_bits, branch_info_mode_t mode) {
 	if(!this->trace->stop_trace()){
 		std::cerr << "stop PT event failed." << std::endl;
 		exit(-1);
@@ -189,7 +191,7 @@ pt_packet_decoder* pt_fuzzer::debug_stop_pt_trace(uint8_t *trace_bits) {
 	std::cout << "stop pt trace OK." << std::endl;
 #endif
 	pt_packet_decoder* decoder = new pt_packet_decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address, this->entry_point);
-	decoder->decode();
+	decoder->decode(mode);
 #ifdef DEBUG
     std::cout << "decode finished, total number of decoded branch: " << decoder->num_decoded_branch << std::endl;
 #endif
@@ -388,12 +390,6 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 #endif
 		return 0;
 	}
-	//if(count_tnt(tnt_cache_state) == 0){
-#ifdef DEBUG
-	//	std::cout << "tnt cache is empty, return." << std::endl;
-#endif
-	//	return 0;
-	//}
 
 #ifdef DEBUG
 	std::cout << "calling decode_tnt for entry_point: " << std::hex << entry_point << std::endl;
@@ -405,6 +401,9 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		return 0;
 	}
 	alter_bitmap(entry_point);
+	if(branch_info_mode == TIP_MODE) {
+		return 1;
+	}
 #ifdef DEBUG
     std::cout << "decode_tnt: before while, start_decode = " << this->start_decode << std::endl; 
 #endif
@@ -550,12 +549,15 @@ static inline void print_unknown(unsigned char* p, unsigned char* end)
 	}
 	printf("\n");
 }
-void pt_packet_decoder::decode() {
+
+void pt_packet_decoder::decode(branch_info_mode_t mode) {
 
 	if(this->aux_tail >= this->aux_head) {
 		std::cerr << "failed to decode: invalid trace data: aux_head = " << this->aux_head << ", aux_tail = " << this->aux_tail << std::endl;
 		return;
 	}
+	this->branch_info_mode = mode;
+
 	uint8_t* map = this->pt_packets;
 	uint64_t len = this->aux_head - this->aux_tail - 1;
 	uint8_t* end = map + len;
