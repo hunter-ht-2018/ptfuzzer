@@ -55,7 +55,13 @@ int main(int argc, char** argv)
 		waitpid(pid, &status, 0);
         uint8_t *a;
         a = (uint8_t*)malloc(MAP_SIZE * sizeof(uint8_t));
-		fuzzer.stop_pt_trace(a);
+        pt_packet_decoder* decoder = fuzzer.debug_stop_pt_trace(a);
+        FILE* f = fopen("control_inst_flow.txt", "w");
+        if(f != nullptr) {
+        	decoder->dump_control_flows(f);
+        	fclose(f);
+        }
+        delete decoder;
         printf("\n\n");
 	}
 

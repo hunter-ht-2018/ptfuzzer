@@ -180,6 +180,27 @@ void pt_fuzzer::stop_pt_trace(uint8_t *trace_bits) {
 	num_runs ++;
 }
 
+pt_packet_decoder* pt_fuzzer::debug_stop_pt_trace(uint8_t *trace_bits) {
+	if(!this->trace->stop_trace()){
+		std::cerr << "stop PT event failed." << std::endl;
+		exit(-1);
+	}
+#ifdef DEBUG
+	std::cout << "stop pt trace OK." << std::endl;
+#endif
+	pt_packet_decoder* decoder = new pt_packet_decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address, this->entry_point);
+	decoder->decode();
+#ifdef DEBUG
+    std::cout << "decode finished, total number of decoded branch: " << decoder.num_decoded_branch << std::endl;
+#endif
+	this->trace->close_pt();
+	delete this->trace;
+	this->trace = nullptr;
+	memcpy(trace_bits, decoder->get_trace_bits(), MAP_SIZE);
+	num_runs ++;
+	return decoder;
+}
+
 bool pt_tracer::open_pt(int pt_perf_type) {
 
 	int pid = this->trace_pid;

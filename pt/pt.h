@@ -457,12 +457,14 @@ class pt_fuzzer {
 	pt_tracer* trace;
 
 	uint64_t num_runs = 0;
+	//pt_packet_decoder* decoder = nullptr;
 
 public:
 	pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);
 	void init();
 	void start_pt_trace(int pid);
 	void stop_pt_trace(uint8_t *trace_bits);
+	pt_packet_decoder* debug_stop_pt_trace(uint8_t *trace_bits);
 	std::chrono::time_point<std::chrono::steady_clock> start;
 	std::chrono::time_point<std::chrono::steady_clock> end;
 	std::chrono::duration<double> diff;
