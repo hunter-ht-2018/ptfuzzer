@@ -191,7 +191,7 @@ pt_packet_decoder* pt_fuzzer::debug_stop_pt_trace(uint8_t *trace_bits) {
 	pt_packet_decoder* decoder = new pt_packet_decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address, this->entry_point);
 	decoder->decode();
 #ifdef DEBUG
-    std::cout << "decode finished, total number of decoded branch: " << decoder.num_decoded_branch << std::endl;
+    std::cout << "decode finished, total number of decoded branch: " << decoder->num_decoded_branch << std::endl;
 #endif
 	this->trace->close_pt();
 	delete this->trace;
@@ -531,8 +531,9 @@ uint64_t pt_packet_decoder::get_ip_val(unsigned char **pp, unsigned char *end, i
 }
 
 void pt_packet_decoder::dump_control_flows(FILE* f) {
+    std::cout << "dump control flow inst, total inst is: " << control_flows.size() << std::endl;
 	for(int i = 0; i < this->control_flows.size(); i ++) {
-		fprintf(f, "%p", control_flows[i]);
+		fprintf(f, "%p\n", control_flows[i]);
 	}
 }
 

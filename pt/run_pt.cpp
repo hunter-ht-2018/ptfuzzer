@@ -58,8 +58,12 @@ int main(int argc, char** argv)
         pt_packet_decoder* decoder = fuzzer.debug_stop_pt_trace(a);
         FILE* f = fopen("control_inst_flow.txt", "w");
         if(f != nullptr) {
+            std::cout << "start to write control flow to file." << std::endl;
         	decoder->dump_control_flows(f);
         	fclose(f);
+        }
+        else {
+            std::cerr << "open file control_inst_flow.txt failed." << std::endl;
         }
         delete decoder;
         printf("\n\n");

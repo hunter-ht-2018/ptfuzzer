@@ -418,12 +418,13 @@ private:
 	    pos16 = (uint16_t)(last_ip16 ^ addr16);
 	    trace_bits[pos16]++;
 	    bitmap_last_ip = addr >> 1;
-#if _DEBUG_
+#if DEBUG
 	    control_flows.push_back(addr);
 #endif
 	}
 private:
 	std::vector<uint64_t> control_flows;
+public:
 	void dump_control_flows(FILE* f);
 };
 

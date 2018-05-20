@@ -253,7 +253,7 @@ static cofi_type opcode_analyzer(disassembler_t* self, cs_insn *ins){
 #ifdef DEBUG
 				/* found */
 				printf("%lx (%d)\t%s\t%s\t\t", ins->address, i, ins->mnemonic, ins->op_str);
-				print_string_hex("      \t", ins->bytes, ins->size);
+				//print_string_hex("      \t", ins->bytes, ins->size);
 #endif
 				return (cofi_type)i;
 				
@@ -514,7 +514,7 @@ static cofi_type get_inst_type(cs_insn *ins){
 #ifdef DEBUG
 				/* found */
 				printf("%lx (%d)\t%s\t%s\t\t", ins->address, i, ins->mnemonic, ins->op_str);
-				print_string_hex("      \t", ins->bytes, ins->size);
+				//print_string_hex("      \t", ins->bytes, ins->size);
 #endif
 				return (cofi_type)i;
 
