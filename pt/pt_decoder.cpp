@@ -191,6 +191,7 @@ pt_packet_decoder* pt_fuzzer::debug_stop_pt_trace(uint8_t *trace_bits, branch_in
 	std::cout << "stop pt trace OK." << std::endl;
 #endif
 	pt_packet_decoder* decoder = new pt_packet_decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address, this->entry_point);
+	decoder->set_tracing_flag();
 	decoder->decode(mode);
 #ifdef DEBUG
     std::cout << "decode finished, total number of decoded branch: " << decoder->num_decoded_branch << std::endl;
@@ -384,12 +385,10 @@ void pt_packet_decoder::record_tip(uint64_t tip) {
 		return;
 	}
 	if(cofi_obj->bb_start_addr != tip) {
-		//std::cerr << "tip instruction not hit the first instruction of a basic block." << std::endl;
-	    //alter_bitmap(cofi_obj->inst_addr);
-        printf( "tip = %p, inst_addr = %p\n", tip, cofi_obj->inst_addr);
-	    alter_bitmap(tip);
+		std::cerr << "tip instruction not hit the first instruction of a basic block." << std::endl;
+        fprintf(stderr, "tip = %p,  bb_addr = %p\n", tip, cofi_obj->bb_start_addr);
 	}
-	//alter_bitmap(cofi_obj->inst_addr);
+	alter_bitmap(cofi_obj->inst_addr);
 }
 
 uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){

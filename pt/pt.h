@@ -237,6 +237,7 @@ class pt_packet_decoder{
 	uint8_t* trace_bits;
 
 	branch_info_mode_t branch_info_mode = TNT_MODE;
+	bool tracing_flag = false;
 
 public:
     uint64_t num_decoded_branch = 0;
@@ -244,6 +245,7 @@ public:
 public:
 	pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address, uint64_t entry_point);
 	~pt_packet_decoder();
+	void set_tracing_flag() { tracing_flag = true; }
 	void decode(branch_info_mode_t mode=TNT_MODE);
 	uint8_t* get_trace_bits() { return trace_bits; }
 private:
@@ -437,8 +439,8 @@ private:
 	    pos16 = (uint16_t)(last_ip16 ^ addr16);
 	    trace_bits[pos16]++;
 	    bitmap_last_ip = addr >> 1;
-
-	    control_flows.push_back(addr);
+	    if(tracing_flag)
+	    	control_flows.push_back(addr);
 
 	}
 private:
