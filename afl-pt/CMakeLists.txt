@@ -14,5 +14,5 @@ add_executable(afl-ptfuzz ${SRC})
 target_link_libraries(afl-ptfuzz pt msr capstone dl)
 
 install(TARGETS afl-ptfuzz
-		RUNTIME DESTINATION .
+		RUNTIME DESTINATION bin
 )

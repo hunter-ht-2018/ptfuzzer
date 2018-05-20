@@ -35,6 +35,7 @@
 #include <wait.h>
 #include <iostream>
 #include <chrono>
+#include <vector>
 #include "disassembler.h"
 #include "pt_ext.h"
 //~ #include "tnt_cache.h"

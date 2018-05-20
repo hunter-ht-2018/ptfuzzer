@@ -211,8 +211,8 @@ bool pt_tracer::open_pt(int pt_perf_type) {
         return false;
     }
     if(ioctl(perf_fd, PERF_EVENT_IOC_SET_FILTER, "filter 0x580/580@/bin/bash") < 0){
-        std::cerr << "set filter for fd " << perf_fd  << " failed." << std::endl;
-        return false;
+        std::cerr << "Warning: set filter for fd " << perf_fd  << " failed, hardware ip filter may not supported." << std::endl;
+        //return false;
     }
 
 #ifdef DEBUG

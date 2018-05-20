@@ -9,3 +9,5 @@ add_subdirectory(pt)
 add_subdirectory(msr)
 add_subdirectory(afl-pt)
 
+install(FILES run_with_pt.py DESTINATION bin)
+

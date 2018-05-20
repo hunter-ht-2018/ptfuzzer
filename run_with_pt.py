@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #arg_parse.py
 #coding:utf-8
 import argparse
@@ -9,16 +10,17 @@ import os
 
 parser = argparse.ArgumentParser(description = 'Process arguements and bin name.')
 parser.add_argument('app_bin', type = str, help = 'the target application')
-parser.add_argument('app_args', type = str, help = 'application arguments')
+parser.add_argument('--app_args', type = str, help = 'application arguments')
 args = parser.parse_args()
 
-
-
-afl_bin = "./pt/test_pt"
+bin_dir = os.path.dirname(__file__)
+afl_bin = os.path.join(bin_dir, "run_pt")
 app_bin = args.app_bin
 app_args = args.app_args
+if app_args == None:
+    app_args = ""
 
-raw_bin = app_bin+".text"
+raw_bin = "." + os.path.basename(app_bin) + ".text"
 
 ld = cle.Loader(app_bin)
 
@@ -46,7 +48,7 @@ for i in ld.main_object.sections:
 f.write(bin_code)
 f.close()
 
-cmdline = "sudo %s -r %s %d %d %d %s %s %s" % (afl_bin, raw_bin, min_addr, max_addr, entry, app_bin, app_args)
+cmdline = "sudo %s %s %d %d %d %s %s" % (afl_bin, raw_bin, min_addr, max_addr, entry, app_bin, app_args)
 print cmdline
 os.system(cmdline)
 
