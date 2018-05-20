@@ -376,6 +376,18 @@ void pt_packet_decoder::print_tnt(tnt_cache_t* tnt_cache){
 #endif
 }
 
+void pt_packet_decoder::record_tip(uint64_t tip) {
+	cofi_inst_t* cofi_obj = this->cofi_map[tip];
+	if(cofi_obj == nullptr){
+		std::cerr << "can not find cofi for tip: " << std::hex << "0x" << tip << std::endl;
+		return;
+	}
+	if(cofi_obj->inst_addr != tip) {
+		std::cerr << "tip instruction not hit the first instruction of a basic block." << std::endl;
+	}
+	alter_bitmap(cofi_obj->inst_addr);
+}
+
 uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 	uint8_t tnt;
 	uint32_t num_tnt_decoded = 0;
@@ -400,12 +412,11 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
 		return 0;
 	}
-	if(cofi_obj->inst_addr == entry_point) {
-		alter_bitmap(cofi_obj->inst_addr);
+	if(cofi_obj->inst_addr != entry_point) {
+		std::cerr << "tip not hit the first instruction of a basic block." << std::endl;
 	}
-	if(branch_info_mode == TIP_MODE) {
-		return 1;
-	}
+	alter_bitmap(cofi_obj->inst_addr);
+
 #ifdef DEBUG
     std::cout << "decode_tnt: before while, start_decode = " << this->start_decode << std::endl; 
 #endif

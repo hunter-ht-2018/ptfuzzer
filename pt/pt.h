@@ -248,13 +248,11 @@ public:
 	uint8_t* get_trace_bits() { return trace_bits; }
 private:
 	uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip);
+
 	inline void tip_handler(uint8_t** p, uint8_t** end){
 #ifdef DEBUG
         //std::cout << "tip: " << count_tnt(this->tnt_cache_state) << std::endl;
 #endif
-		//if (count_tnt(this->tnt_cache_state)){
-		//	decode_tnt(this->last_tip);
-		//}
 		uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
         if(tip == app_entry_point) {
 #ifdef DEBUG
@@ -262,19 +260,25 @@ private:
 #endif
             this->start_decode = true;
         }
-        //if(this->start_decode) 
+
 #ifdef DEBUG
         std::cout << "tip: " << std::hex << tip << std::endl;
 #endif
-        if(this->start_decode && this->last_tip != 0){
-        	decode_tnt(this->last_tip);
+        if(this->branch_info_mode == TIP_MODE) {
+        	if(this->start_decode) record_tip(tip);
+        	return;
         }
-        if(out_of_bounds(tip)) {
-        	this->last_tip = 0;
+        else if(this->branch_info_mode == TNT_MODE) {
+			if(this->start_decode && this->last_tip != 0){
+				decode_tnt(this->last_tip);
+			}
+			if(out_of_bounds(tip)) {
+				this->last_tip = 0;
+			}
+			else{
+				this->last_tip = tip;
+			}
         }
-        else{
-        	this->last_tip = tip;
-		}
 	}
 
 	inline void tip_pge_handler(uint8_t** p, uint8_t** end){
@@ -289,12 +293,17 @@ private:
 #endif
             this->start_decode = true;
         }
-        //if(this->start_decode) 
+
 #ifdef DEBUG
         std::cout << "tip_pge: " << std::hex << last_tip << std::endl;
 #endif
-        if(out_of_bounds(last_tip)) {
-        	this->last_tip = 0;
+        if(this->branch_info_mode == TIP_MODE) {
+        	if(this->start_decode) record_tip(last_tip);
+        }
+        else if(this->branch_info_mode == TNT_MODE) {
+			if(out_of_bounds(last_tip)) {
+				this->last_tip = 0;
+			}
         }
 	}
 
@@ -303,9 +312,7 @@ private:
         //std::cout << "enter tip_pgd_handler" << std::endl;
 #endif
 		this->pge_enabled = false;
-		//if (count_tnt(this->tnt_cache_state)){
-		//	decode_tnt(this->last_tip);
-		//}
+
 		uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
         if(tip == app_entry_point) {
 #ifdef DEBUG
@@ -313,19 +320,25 @@ private:
 #endif
             this->start_decode = true;
         }
-        //if(this->start_decode) 
+
 #ifdef DEBUG
         std::cout << "tip_pgd: " << std::hex << tip << std::endl;
 #endif
-        if(this->start_decode && this->last_tip != 0){
-        	decode_tnt(this->last_tip);
+
+        if(this->branch_info_mode == TIP_MODE) {
+        	if(this->start_decode) record_tip(tip);
         }
-        if(out_of_bounds(tip)) {
-        	this->last_tip = 0;
+        else if(this->branch_info_mode == TNT_MODE) {
+			if(this->start_decode && this->last_tip != 0){
+				decode_tnt(this->last_tip);
+			}
+			if(out_of_bounds(tip)) {
+				this->last_tip = 0;
+			}
+			else{
+				this->last_tip = tip;
+			}
         }
-        else{
-        	this->last_tip = tip;
-		}
 	}
 
 	inline void tip_fup_handler(uint8_t** p, uint8_t** end){
@@ -334,29 +347,24 @@ private:
 #endif
 
 		uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
-		if(this->branch_info_mode == TIP_MODE) {
-			return;
-		}
-        if(tip == app_entry_point) {
-#ifdef DEBUG
-            std::cout << "enter program entry point" << std::endl;
-#endif
-            this->start_decode = true;
-        }
-        //if(this->start_decode) 
+
 #ifdef DEBUG
         std::cout << "tip_fup: " << std::hex << tip << std::endl;
 #endif
-
-        if(this->start_decode && this->last_tip != 0){
-        	decode_tnt(this->last_tip);
-    	}
-        if(out_of_bounds(tip)) {
-        	this->last_tip = 0;
+        if(this->branch_info_mode == TIP_MODE) {
+        	//doing nothing
         }
-        else{
-        	this->last_tip = tip;
-		}
+        else if(this->branch_info_mode == TNT_MODE) {
+			if(this->start_decode && this->last_tip != 0){
+				decode_tnt(this->last_tip);
+			}
+			if(out_of_bounds(tip)) {
+				this->last_tip = 0;
+			}
+			else{
+				this->last_tip = tip;
+			}
+        }
 	}
 
 	inline void psb_handler(uint8_t** p){
@@ -420,6 +428,7 @@ private:
 
 	void flush();
 	uint32_t decode_tnt(uint64_t entry_point);
+	void record_tip(uint64_t tip);
 	inline void alter_bitmap(uint64_t addr) {
 		//64位地址截断为16位
 	    uint16_t last_ip16, addr16, pos16;
