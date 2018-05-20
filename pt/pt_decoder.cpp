@@ -377,15 +377,19 @@ void pt_packet_decoder::print_tnt(tnt_cache_t* tnt_cache){
 }
 
 void pt_packet_decoder::record_tip(uint64_t tip) {
+    if(out_of_bounds(tip)) return;
 	cofi_inst_t* cofi_obj = this->cofi_map[tip];
 	if(cofi_obj == nullptr){
 		std::cerr << "can not find cofi for tip: " << std::hex << "0x" << tip << std::endl;
 		return;
 	}
 	if(cofi_obj->inst_addr != tip) {
-		std::cerr << "tip instruction not hit the first instruction of a basic block." << std::endl;
+		//std::cerr << "tip instruction not hit the first instruction of a basic block." << std::endl;
+	    //alter_bitmap(cofi_obj->inst_addr);
+        printf( "tip = %p, inst_addr = %p\n", tip, cofi_obj->inst_addr);
+	    alter_bitmap(tip);
 	}
-	alter_bitmap(cofi_obj->inst_addr);
+	//alter_bitmap(cofi_obj->inst_addr);
 }
 
 uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){

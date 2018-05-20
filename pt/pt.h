@@ -298,7 +298,7 @@ private:
         std::cout << "tip_pge: " << std::hex << last_tip << std::endl;
 #endif
         if(this->branch_info_mode == TIP_MODE) {
-        	if(this->start_decode) record_tip(last_tip);
+        	//if(this->start_decode) record_tip(last_tip);
         }
         else if(this->branch_info_mode == TNT_MODE) {
 			if(out_of_bounds(last_tip)) {
@@ -326,7 +326,7 @@ private:
 #endif
 
         if(this->branch_info_mode == TIP_MODE) {
-        	if(this->start_decode) record_tip(tip);
+        	//if(this->start_decode) record_tip(tip);
         }
         else if(this->branch_info_mode == TNT_MODE) {
 			if(this->start_decode && this->last_tip != 0){
@@ -437,9 +437,9 @@ private:
 	    pos16 = (uint16_t)(last_ip16 ^ addr16);
 	    trace_bits[pos16]++;
 	    bitmap_last_ip = addr >> 1;
-#if DEBUG
+
 	    control_flows.push_back(addr);
-#endif
+
 	}
 private:
 	std::vector<uint64_t> control_flows;
