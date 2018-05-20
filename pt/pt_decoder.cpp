@@ -400,7 +400,9 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
 		return 0;
 	}
-	alter_bitmap(cofi_obj->inst_addr);
+	if(cofi_obj->inst_addr == entry_point) {
+		alter_bitmap(cofi_obj->inst_addr);
+	}
 	if(branch_info_mode == TIP_MODE) {
 		return 1;
 	}
