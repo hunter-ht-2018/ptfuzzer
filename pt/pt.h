@@ -332,10 +332,11 @@ private:
 #ifdef DEBUG
         //std::cout << "enter tip_fup_handler" << std::endl;
 #endif
-		//if (count_tnt(this->tnt_cache_state)){
-		//	decode_tnt(this->last_tip);
-		//}
+
 		uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+		if(this->branch_info_mode == TIP_MODE) {
+			return;
+		}
         if(tip == app_entry_point) {
 #ifdef DEBUG
             std::cout << "enter program entry point" << std::endl;
@@ -346,6 +347,7 @@ private:
 #ifdef DEBUG
         std::cout << "tip_fup: " << std::hex << tip << std::endl;
 #endif
+
         if(this->start_decode && this->last_tip != 0){
         	decode_tnt(this->last_tip);
     	}
@@ -355,7 +357,6 @@ private:
         else{
         	this->last_tip = tip;
 		}
-
 	}
 
 	inline void psb_handler(uint8_t** p){
