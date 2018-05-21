@@ -433,12 +433,15 @@ private:
 	void record_tip(uint64_t tip);
 	inline void alter_bitmap(uint64_t addr) {
 		//64位地址截断为16位
+#if 0
 	    uint16_t last_ip16, addr16, pos16;
 	    last_ip16 = (uint16_t)(bitmap_last_ip);
 	    addr16 = (uint16_t)(addr);
 	    pos16 = (uint16_t)(last_ip16 ^ addr16);
 	    trace_bits[pos16]++;
 	    bitmap_last_ip = addr >> 1;
+#endif
+        trace_bits[addr & 0xffff] ++;
 	    if(tracing_flag)
 	    	control_flows.push_back(addr);
 

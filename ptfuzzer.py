@@ -25,10 +25,11 @@ while p < len(args.target):
 if p < len(args.target) - 1:
 	target_args = args.target[p+1 : len(args.target)]
 
-afl_bin = "./build/afl-ptfuzz"
+bin_dir = os.path.dirname(__file__)
+afl_bin = os.path.join(bin_dir, "afl-ptfuzz")
 afl_args = args.afl_args
 
-raw_bin = raw_bin_file+".text"
+raw_bin = "." + os.path.basename(raw_bin_file) + ".text"
 
 ld = cle.Loader(raw_bin_file)
 

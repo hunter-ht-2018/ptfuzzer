@@ -235,7 +235,7 @@ bool pt_tracer::open_pt(int pt_perf_type) {
         return false;
     }
     if(ioctl(perf_fd, PERF_EVENT_IOC_SET_FILTER, "filter 0x580/580@/bin/bash") < 0){
-        std::cerr << "Warning: set filter for fd " << perf_fd  << " failed, hardware ip filter may not supported." << std::endl;
+        //std::cerr << "Warning: set filter for fd " << perf_fd  << " failed, hardware ip filter may not supported." << std::endl;
         //return false;
     }
 
@@ -384,10 +384,10 @@ void pt_packet_decoder::record_tip(uint64_t tip) {
 		std::cerr << "can not find cofi for tip: " << std::hex << "0x" << tip << std::endl;
 		return;
 	}
-	if(cofi_obj->bb_start_addr != tip) {
-		std::cerr << "tip instruction not hit the first instruction of a basic block." << std::endl;
-        fprintf(stderr, "tip = %p,  bb_addr = %p\n", tip, cofi_obj->bb_start_addr);
-	}
+	//if(cofi_obj->bb_start_addr != tip) {
+	//	std::cerr << "tip instruction not hit the first instruction of a basic block." << std::endl;
+    //    fprintf(stderr, "tip = %p,  bb_addr = %p\n", tip, cofi_obj->bb_start_addr);
+	//}
 	alter_bitmap(cofi_obj->inst_addr);
 }
 
@@ -415,9 +415,9 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
 		return 0;
 	}
-	if(cofi_obj->inst_addr != entry_point) {
-		std::cerr << "tip not hit the first instruction of a basic block." << std::endl;
-	}
+	//if(cofi_obj->inst_addr != entry_point) {
+	//	std::cerr << "tip not hit the first instruction of a basic block." << std::endl;
+	//}
 	alter_bitmap(cofi_obj->inst_addr);
 
 #ifdef DEBUG
@@ -456,9 +456,9 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		                std::cerr << "error: tnt target out of bounds, inst address = " << std::hex << cofi_obj->inst_addr << ", target = " << target_addr << std::endl;
 						return num_tnt_decoded;
 		            }
-		            alter_bitmap(target_addr);
+		            //alter_bitmap(target_addr);
 					cofi_obj = cofi_map[target_addr];
-		            
+		            if(cofi_obj != nullptr) alter_bitmap(cofi_obj->inst_addr);
 					break;
 		        }
 				case NOT_TAKEN:
@@ -466,8 +466,8 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 #ifdef DEBUG
 		            std::cout << "inst " << cofi_obj->inst_addr << " NOT_TAKEN, next = " << cofi_obj->next_cofi->inst_addr << std::endl;
 #endif
-					alter_bitmap(cofi_obj->next_cofi->inst_addr);
 					cofi_obj = cofi_obj->next_cofi;
+                    if(cofi_obj != nullptr) alter_bitmap(cofi_obj->inst_addr);
 
 					break;
 				}
@@ -477,8 +477,9 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 				std::cout << "COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH: " << std::hex << cofi_obj->inst_addr << ", target = " << cofi_obj->target_addr << std::endl;
 #endif
 				uint64_t target_addr = cofi_obj->target_addr;
-				alter_bitmap(target_addr);
+				//alter_bitmap(target_addr);
 				cofi_obj = cofi_map[target_addr];
+                if(cofi_obj != nullptr) alter_bitmap(cofi_obj->inst_addr);
 				break;
 			}
 			case COFI_TYPE_INDIRECT_BRANCH:
