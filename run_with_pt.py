@@ -7,10 +7,11 @@ from capstone import *
 import argparse
 import os
 
-def binary_loaded_info(self, app_bin):
+def binary_loaded_info(app_bin):
     
     # First, get binary type: executable or shared object(PIE)
     bin_type = "executable"
+    app_bin = os.path.realpath(app_bin)
     file_info = os.popen("file " + app_bin)
     if "shared object" in file_info.read():
         bin_type = "shared_object"
