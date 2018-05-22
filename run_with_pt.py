@@ -22,33 +22,54 @@ if app_args == None:
 
 raw_bin = "." + os.path.basename(app_bin) + ".text"
 
+file_info = os.popen("file " + app_bin)
+bin_type = "executable"
+if "shared object" in file_info.read():
+    bin_type = "shared_object"
+
+print "binary type is ", bin_type
+
+# Now load binary, calculate program loaded base, entry, text_min and text_max 
 ld = cle.Loader(app_bin)
-
-f = open(raw_bin, "wb")
-if not f:
-    print "open file " + raw_bin + " for writing failed."
-
 bin_code = ""
-base_addr = 0x0
+
+base_addr = ld.main_object.sections[0].vaddr
 entry = ld.main_object.entry + base_addr
-# 'data', 'header', 'is_null', 'name', 'stream'
-
-
-
+print "Program base by cle: ", base_addr
+print "Program entry by cle: ", entry
 for i in ld.main_object.sections:
     if i.name == ".text":
-        print i.vaddr
-        min_addr = i.vaddr + base_addr
-        max_addr = i.vaddr + i.filesize + base_addr
+        text_min = i.vaddr
+        text_max = i.vaddr + i.filesize
         raw_bytes = ld.memory.read_bytes(i.vaddr, i.filesize)
         for byte in raw_bytes:
             bin_code += byte
 
-# print len(bin_code)
+# write raw binary code to file
+f = open(raw_bin, "wb")
+if not f:
+    print "open file " + raw_bin + " for writing failed."
+    sys.exit(-1)
+
 f.write(bin_code)
 f.close()
 
-cmdline = "sudo %s %s %d %d %d %s %s" % (afl_bin, raw_bin, min_addr, max_addr, entry, app_bin, app_args)
+# Now we have to recalcuate the loaded addresses for Position-independent executables
+if bin_type == "shared_object":
+    text_min -= base_addr
+    text_max -= base_addr
+    entry -= base_addr
+    base_addr = 0x0
+
+    base_addr = 0x555555554000
+    text_min += base_addr
+    text_max += base_addr
+    entry += base_addr
+
+print "calculated real program base: ", hex(base_addr)
+print "calculated real program entry: ", hex(entry)
+
+cmdline = "sudo %s %s %d %d %d %s %s" % (afl_bin, raw_bin, text_min, text_max, entry, app_bin, app_args)
 print cmdline
 os.system(cmdline)
 

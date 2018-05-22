@@ -4,7 +4,7 @@ project(ptfuzzer)
 
 add_compile_options("-Wall")
 set ( CMAKE_C_FLAGS "-std=c11 -O3 -D_FILE_OFFSET_BITS=64 -g")
-set ( CMAKE_CXX_FLAGS "-std=c++11 -O3 -D_FILE_OFFSET_BITS=64 -g")
+set ( CMAKE_CXX_FLAGS "-std=c++11 -O3 -D_FILE_OFFSET_BITS=64 -g -DDEBUG")
 
 set(PT_SRC pt_decoder.cpp disassembler.cpp tnt_cache.cpp)
 
