@@ -22,7 +22,7 @@ def binary_loaded_info(app_bin):
     bin_code = ""
         
     base_addr = ld.main_object.sections[0].vaddr
-    entry = ld.main_object.entry + base_addr
+    entry = ld.main_object.entry
     print "Program base by cle: ", base_addr
     print "Program entry by cle: ", entry
     for i in ld.main_object.sections:
@@ -83,6 +83,8 @@ if __name__ == '__main__':
     
     print "calculated real program base: ", hex(info['base'])
     print "calculated real program entry: ", hex(info['entry'])
+    print "calculated real text_min: ", hex(info['text_min'])
+    print "calculated real text_max: ", hex(info['text_max'])
     
     cmdline = "sudo %s %s %d %d %d %s %s" % (afl_bin, info['raw_bin'], info['text_min'], info['text_max'], info['entry'], app_bin, app_args)
     print cmdline

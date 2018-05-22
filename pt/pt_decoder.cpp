@@ -378,6 +378,7 @@ void pt_packet_decoder::print_tnt(tnt_cache_t* tnt_cache){
 }
 
 void pt_packet_decoder::record_tip(uint64_t tip) {
+    printf("%p\n", tip);
     if(out_of_bounds(tip)) return;
 	cofi_inst_t* cofi_obj = this->cofi_map[tip];
 	if(cofi_obj == nullptr){
