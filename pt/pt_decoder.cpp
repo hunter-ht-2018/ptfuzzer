@@ -9,6 +9,7 @@
 #define ATOMIC_POST_OR_RELAXED(x, y) __atomic_fetch_or(&(x), y, __ATOMIC_RELAXED)
 #define ATOMIC_GET(x) __atomic_load_n(&(x), __ATOMIC_SEQ_CST)
 #define ATOMIC_SET(x, y) __atomic_store_n(&(x), y, __ATOMIC_SEQ_CST)
+bool perf_support_ip_filter = true; //assume platform support ip filter in perf
 static uint8_t psb[16] = {
 	0x02, 0x82, 0x02, 0x82, 0x02, 0x82, 0x02, 0x82,
 	0x02, 0x82, 0x02, 0x82, 0x02, 0x82, 0x02, 0x82
@@ -78,6 +79,24 @@ bool pt_fuzzer::config_pt() {
 #ifdef DEBUG
     std::cout << "config PT OK, perfIntelPtPerfType = " << perfIntelPtPerfType << std::endl;
 #endif
+
+#ifdef DEBUG
+  std::cout << "try to write msr for ip filter." << std::endl;
+#endif
+    char ip_low[64];
+    char ip_high[64];
+    sprintf(ip_low, "%ld", this->base_address);
+    sprintf(ip_high, "%ld", this->max_address);
+    char* reg_value[2] = {ip_low, NULL};
+    wrmsr_on_all_cpus(0x580, 1, reg_value); //set low limit for ip filtering
+    reg_value[0] = ip_high;
+    wrmsr_on_all_cpus(0x581, 1, reg_value); //set high limit for ip filtering
+#ifdef DEBUG
+    rdmsr_on_all_cpus(0x580);
+    rdmsr_on_all_cpus(0x581);
+    std::cout << "after wrmsr" << std::endl;
+#endif
+
 	return true;
 }
 
@@ -234,10 +253,13 @@ bool pt_tracer::open_pt(int pt_perf_type) {
         printf("perf_event_open() failed\n");
         return false;
     }
-    //if(ioctl(perf_fd, PERF_EVENT_IOC_SET_FILTER, "filter 0x580/580@/bin/bash") < 0){
-        //std::cerr << "Warning: set filter for fd " << perf_fd  << " failed, hardware ip filter may not supported." << std::endl;
-        //return false;
-    //}
+    if(perf_support_ip_filter) {
+        if(ioctl(perf_fd, PERF_EVENT_IOC_SET_FILTER, "filter 0x580/580@/bin/bash") < 0){
+            std::cerr << "Warning: set filter for fd " << perf_fd  << " failed, hardware ip filter may not supported." << std::endl;
+            std::cerr << "We stop trying to set ip filter again." << std::endl;
+            perf_support_ip_filter = false;
+        }
+    }
 
 #ifdef DEBUG
     std::cout << "before wrmsr" << std::endl;
@@ -378,7 +400,6 @@ void pt_packet_decoder::print_tnt(tnt_cache_t* tnt_cache){
 }
 
 void pt_packet_decoder::record_tip(uint64_t tip) {
-    printf("%p\n", tip);
     if(out_of_bounds(tip)) return;
 	cofi_inst_t* cofi_obj = this->cofi_map[tip];
 	if(cofi_obj == nullptr){
