@@ -23,8 +23,8 @@ def binary_loaded_info(app_bin):
         
     base_addr = ld.main_object.sections[0].vaddr
     entry = ld.main_object.entry
-    print "Program base by cle: ", base_addr
-    print "Program entry by cle: ", entry
+    print "Program base by cle: ", hex(base_addr)
+    print "Program entry by cle: ", hex(entry)
     for i in ld.main_object.sections:
         if i.name == ".text":
             text_min = i.vaddr

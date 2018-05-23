@@ -407,7 +407,7 @@ private:
 
 	inline void long_tnt_handler(uint8_t** p){
 #ifdef DEBUG
-		std::cout << "long tnt: " << count_tnt_bits(true, (uint64_t)(**p)) << std::endl;;
+		std::cout << "long_tnt: " << count_tnt_bits(false, (uint64_t)(**p)) << std::endl;;
 #endif
 		if (this->start_decode && this->pge_enabled) {
         	//tnt_cache_t* tnt_cache = tnt_cache_init();

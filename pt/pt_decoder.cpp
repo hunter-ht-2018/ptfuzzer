@@ -122,6 +122,9 @@ bool pt_fuzzer::load_binary() {
 }
 
 bool pt_fuzzer::build_cofi_map() {
+#ifdef DEBUG
+    std::cout << "start to disassmble binary..." << std::endl;
+#endif
 	uint32_t num_inst = disassemble_binary( this->code, this->base_address, this->max_address, this->cofi_map);
 #ifdef DEBUG
 	std::cout << "total number of cofi instructions: " << num_inst << std::endl;
