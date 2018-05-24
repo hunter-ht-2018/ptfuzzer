@@ -12,6 +12,7 @@ size = len(data1)
 if len(data1) > len(data2):
     size = len(data2)
 last = None
+
 for i in range(0, size):
     line1 = data1[i].strip()
     line2 = data2[i].strip()
@@ -20,6 +21,12 @@ for i in range(0, size):
         print "file1: %s" % line1
         print "file2: %s" % line2
         print "last equal: ", last
+        for j in range(0, 5):
+            pos = i + j - 1
+            if pos < size:
+                line1 = data1[pos].strip()
+                line2 = data2[pos].strip()
+                print line1 + '\t\t\t\t' + line2
         break
     last = line1
 
