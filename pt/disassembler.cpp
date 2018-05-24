@@ -513,7 +513,7 @@ static cofi_type get_inst_type(cs_insn *ins){
 						continue;
 #ifdef DEBUG
 				/* found */
-				printf("%lx (%d)\t%s\t%s\t\t", ins->address, i, ins->mnemonic, ins->op_str);
+				//printf("%lx (%d)\t%s\t%s\t\t", ins->address, i, ins->mnemonic, ins->op_str);
 				//print_string_hex("      \t", ins->bytes, ins->size);
 #endif
 				return (cofi_type)i;
