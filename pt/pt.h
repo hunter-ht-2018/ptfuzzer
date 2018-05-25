@@ -43,7 +43,7 @@
 /* Size (in bytes) for report data to be stored in stack before written to file */
 #define _HF_REPORT_SIZE 8192
 #define _HF_PERF_MAP_SZ (1024 * 512)
-#define _HF_PERF_AUX_SZ (1024 * 1024)
+#define _HF_PERF_AUX_SZ (16 * 1024 * 1024)
 #define _HF_PERF_BITMAP_SIZE_16M (1024U * 1024U * 16U)
 #define _HF_PERF_BITMAP_BITSZ_MASK 0x7ffffff
 

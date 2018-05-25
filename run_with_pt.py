@@ -6,7 +6,7 @@ import cle
 from capstone import *
 import argparse
 import os
-
+import sys
 def binary_loaded_info(app_bin):
     
     # First, get binary type: executable or shared object(PIE)
@@ -66,17 +66,20 @@ def binary_loaded_info(app_bin):
     return bin_loaded_info 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description = 'Process arguements and bin name.')
-    parser.add_argument('app_bin', type = str, help = 'the target application')
-    parser.add_argument('--app_args', type = str, help = 'application arguments')
-    args = parser.parse_args()
-    
+    #parser = argparse.ArgumentParser(description = 'Process arguements and bin name.')
+    #parser.add_argument('app_bin', type = str, help = 'the target application')
+    #parser.add_argument('--app-args', type = str, help = 'application arguments')
+    #args = parser.parse_args()
+    if len(sys.argv) <= 1:
+        print "usage: python %s <cmd_line>" % sys.argv[0]
+        sys.exit(0)
+    cmdline = ""
+    for i in range(1, len(sys.argv)):
+        cmdline += (sys.argv[i] + " ")
+    print "run cmd with pt: ", cmdline
     bin_dir = os.path.dirname(__file__)
     afl_bin = os.path.join(bin_dir, "run_pt")
-    app_bin = args.app_bin
-    app_args = args.app_args
-    if app_args == None:
-        app_args = ""
+    app_bin = sys.argv[1]
     
     
     info = binary_loaded_info(app_bin)
@@ -86,7 +89,7 @@ if __name__ == '__main__':
     print "calculated real text_min: ", hex(info['text_min'])
     print "calculated real text_max: ", hex(info['text_max'])
     
-    cmdline = "sudo %s %s %d %d %d %s %s" % (afl_bin, info['raw_bin'], info['text_min'], info['text_max'], info['entry'], app_bin, app_args)
+    cmdline = "sudo %s %s %d %d %d %s" % (afl_bin, info['raw_bin'], info['text_min'], info['text_max'], info['entry'], cmdline)
     print cmdline
     os.system(cmdline)
 

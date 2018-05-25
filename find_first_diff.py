@@ -21,7 +21,7 @@ for i in range(0, size):
         print "file1: %s" % line1
         print "file2: %s" % line2
         print "last equal: ", last
-        for j in range(0, 5):
+        for j in range(0, 10):
             pos = i + j - 1
             if pos < size:
                 line1 = data1[pos].strip()

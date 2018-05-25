@@ -598,6 +598,13 @@ void pt_packet_decoder::decode(branch_info_mode_t mode) {
 		std::cerr << "failed to decode: invalid trace data: aux_head = " << this->aux_head << ", aux_tail = " << this->aux_tail << std::endl;
 		return;
 	}
+    
+    if(this->aux_head - this->aux_tail >= _HF_PERF_AUX_SZ ) {
+        std::cerr << "perf aux buffer full, PT packets may be truncated." << std::endl;
+        std::cerr << "current perf aux buffer size is " << _HF_PERF_AUX_SZ << ", you may need to enlarge it." << std::endl;
+        return;
+    }
+
 	this->branch_info_mode = mode;
 
 	uint8_t* map = this->pt_packets;
