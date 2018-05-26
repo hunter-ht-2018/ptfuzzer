@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
+#include <sstream>
 #include "tnt_cache.h"
 
 #define BIT(x)				(1ULL << (x))
@@ -102,6 +102,18 @@ uint32_t count_tnt_bits(bool short_tnt, uint64_t data) {
 		bits = asm_bsr(data)-LONG_TNT_MAX_BITS;
 	}
 	return bits;
+}
+
+std::string tnt_to_string(bool short_tnt, uint64_t data) {
+	std::stringstream ss;
+	uint32_t bits = count_tnt_bits(short_tnt, data);
+	ss << bits << " ";
+	for(uint32_t i = 0; i < bits; i ++) {
+		uint8_t ret = !!(data & BIT((SHORT_TNT_OFFSET-1) + bits - i));
+		if(ret) ss << "T";
+		else ss < "N";
+	}
+	return ss.str();
 }
 
 void append_tnt_cache(tnt_cache_t* self, bool short_tnt, uint64_t data){

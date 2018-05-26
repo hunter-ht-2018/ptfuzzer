@@ -381,7 +381,7 @@ private:
 	inline void tnt8_handler(uint8_t** p){
         //uint64_t old_count = count_tnt(tnt_cache_state);
 #ifdef DEBUG
-		std::cout << "tnt8: " << count_tnt_bits(true, (uint64_t)(**p)) << std::endl;
+		std::cout << "tnt8: " << tnt_to_string(true, (uint64_t)(**p)) << std::endl;
 #endif
 		//if (this->pge_enabled)
 #ifdef DEBUG
@@ -407,7 +407,7 @@ private:
 
 	inline void long_tnt_handler(uint8_t** p){
 #ifdef DEBUG
-		std::cout << "long_tnt: " << count_tnt_bits(false, (uint64_t)(**p)) << std::endl;;
+		std::cout << "long_tnt: " << tnt_to_string(false, (uint64_t)(**p)) << std::endl;;
 #endif
 		if (this->start_decode && this->pge_enabled) {
         	//tnt_cache_t* tnt_cache = tnt_cache_init();
