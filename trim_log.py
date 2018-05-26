@@ -10,7 +10,7 @@ filters = ["tip_fup:", "tip:", "tip_pgd:" , "tip_pge:"]
 
 tnt_cache = None
 def print_tnt_cache(tnt):
-    print tnt[0], tnt[1], tnt[2], '\n'
+    print tnt[0], tnt[1], tnt[2]
     
 for line in lines:
     for sf in filters:
@@ -22,12 +22,12 @@ for line in lines:
             break
 
     if line.startswith("tnt8:") or line.startswith("long_tnt:"):
-        tntwords = line.splits()
+        tnt = line.strip().split()
         tnt_marker = tnt[0]
         tnt_bits = int(tnt[1])
         tnt_data = tnt[2]
         if tnt_cache == None:
-            tnt_cache = ("tnt_cache:", tnt_bts, tnt_data)
+            tnt_cache = ["tnt_cache:", tnt_bits, tnt_data]
         else:
             tnt_cache[1] += tnt_bits
             tnt_cache[2] += tnt_data

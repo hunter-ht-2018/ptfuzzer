@@ -111,7 +111,7 @@ std::string tnt_to_string(bool short_tnt, uint64_t data) {
 	for(uint32_t i = 0; i < bits; i ++) {
 		uint8_t ret = !!(data & BIT((SHORT_TNT_OFFSET-1) + bits - i));
 		if(ret) ss << "T";
-		else ss < "N";
+		else ss << "N";
 	}
 	return ss.str();
 }
