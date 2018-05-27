@@ -402,7 +402,7 @@ void pt_packet_decoder::print_tnt(tnt_cache_t* tnt_cache){
 #endif
 }
 
-void pt_packet_decoder::record_tip(uint64_t tip) {
+void pt_packet_decoder::decode_tip(uint64_t tip) {
     if(out_of_bounds(tip)) return;
 	cofi_inst_t* cofi_obj = this->cofi_map[tip];
 	if(cofi_obj == nullptr){
@@ -440,26 +440,17 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
 		return 0;
 	}
-	//if(cofi_obj->inst_addr != entry_point) {
-	//	std::cerr << "tip not hit the first instruction of a basic block." << std::endl;
-	//}
-	alter_bitmap(cofi_obj->inst_addr);
 
 #ifdef DEBUG
     std::cout << "decode_tnt: before while, start_decode = " << this->start_decode << std::endl; 
 #endif
-	while(true) {
-		if(cofi_obj == nullptr){
-#ifdef DEBUG
-			std::cout << "cofi_obj = null, current decoding finished." << std::endl;
-#endif
-		    break;
-		}
+	while(cofi_obj != nullptr) {
+		alter_bitmap(cofi_obj->inst_addr);
 		switch(cofi_obj->type){
 
 			case COFI_TYPE_CONDITIONAL_BRANCH:
 				tnt = process_tnt_cache(tnt_cache_state);
-				if( !this->start_decode ) continue;
+
 #ifdef DEBUG
 		        std::cout << "decode tnt: "  << std::endl;
 #endif
@@ -471,19 +462,16 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 					return num_tnt_decoded;
 				case TAKEN:
 		        {
-					//~ sample_decoded_detailed("(%d)\t%lx\t(Taken)\n", COFI_TYPE_CONDITIONAL_BRANCH, obj->cofi->ins_addr);
 #ifdef DEBUG
 		            std::cout << "inst " << cofi_obj->inst_addr << " TAKEN, target = " << cofi_obj->target_addr << std::endl;
 #endif
-					//self->handler(obj->cofi->ins_addr);
 		            uint64_t target_addr = cofi_obj->target_addr;
-					if (out_of_bounds(target_addr)){
-		                std::cerr << "error: tnt target out of bounds, inst address = " << std::hex << cofi_obj->inst_addr << ", target = " << target_addr << std::endl;
-						return num_tnt_decoded;
-		            }
-		            //alter_bitmap(target_addr);
+					//if (out_of_bounds(target_addr)){
+		            //    std::cerr << "error: tnt target out of bounds, inst address = " << std::hex << cofi_obj->inst_addr << ", target = " << target_addr << std::endl;
+					//	return num_tnt_decoded;
+		            //}
+
 					cofi_obj = cofi_map[target_addr];
-		            if(cofi_obj != nullptr) alter_bitmap(cofi_obj->inst_addr);
 					break;
 		        }
 				case NOT_TAKEN:
@@ -492,19 +480,16 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		            std::cout << "inst " << cofi_obj->inst_addr << " NOT_TAKEN, next = " << cofi_obj->next_cofi->inst_addr << std::endl;
 #endif
 					cofi_obj = cofi_obj->next_cofi;
-                    if(cofi_obj != nullptr) alter_bitmap(cofi_obj->inst_addr);
-
 					break;
 				}
 				break;
+
 			case COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH: {
 #ifdef DEBUG
 				std::cout << "COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH: " << std::hex << cofi_obj->inst_addr << ", target = " << cofi_obj->target_addr << std::endl;
 #endif
 				uint64_t target_addr = cofi_obj->target_addr;
-				//alter_bitmap(target_addr);
 				cofi_obj = cofi_map[target_addr];
-                if(cofi_obj != nullptr) alter_bitmap(cofi_obj->inst_addr);
 				break;
 			}
 			case COFI_TYPE_INDIRECT_BRANCH:
@@ -789,9 +774,9 @@ void pt_packet_decoder::decode(branch_info_mode_t mode) {
 void pt_packet_decoder::flush(){
 	this->last_tip = 0;
 	this->last_ip2 = 0;
-	this->fup_pkt = false;
 	this->isr = false;
 	this->in_range = false;
+	this->pkt_state.reset();
 }
 
 
