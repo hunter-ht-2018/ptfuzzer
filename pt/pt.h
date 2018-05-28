@@ -7,6 +7,7 @@
 //~ #include <dirent.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <assert.h>
 //~ #include <pthread.h>
 #include <stdbool.h>
 //~ #include <stdint.h>

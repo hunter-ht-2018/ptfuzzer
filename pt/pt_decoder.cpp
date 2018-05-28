@@ -436,8 +436,10 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 #endif
 	cofi_obj = this->cofi_map[entry_point];
 	if(cofi_obj == nullptr){
+#ifdef DEBUG
 		std::cerr << "can not find cofi for entry_point: " << std::hex << "0x" << entry_point << std::endl;
 		std::cerr << "number of decoded branches: " << num_decoded_branch << std::endl;
+#endif
 		return 0;
 	}
 
