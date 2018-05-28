@@ -255,13 +255,13 @@ typedef struct _packet_state_t {
 		state = NO_FUP_state;
 	}
 	inline void reset() {
-		fup_state_t state = NO_FUP_state;
-		uint64_t fup_addr = 0;
-		uint64_t fup_pgd_addr = 0;
-		uint64_t fup_pge_addr = 0;
+		state = NO_FUP_state;
+		fup_addr = 0;
+		fup_pgd_addr = 0;
+		fup_pge_addr = 0;
 	}
 	bool is_fup_state() { return state == FUP_state; }
-	bool is_fup_pgd_state() { return state == FUP_PGD_state; }
+	bool is_fup_pgd_state() { return state == FUP_PGD_state && fup_pgd_addr == 0; }
 	bool is_fup_pge_state() { return state == FUP_PGE_state && 	fup_pge_addr == fup_addr; }
 } packet_state_t;
 
@@ -348,6 +348,7 @@ private:
 #endif
         this->pkt_state.pge(tip);
         if(!this->pkt_state.is_fup_pge_state()) { //not the FUP state, perform as the last PGD packet.
+			pkt_state.reset();
 			if(this->branch_info_mode == TIP_MODE) {
 				if(this->start_decode) decode_tip(tip);
 			}
@@ -385,7 +386,7 @@ private:
 				//if(this->start_decode) record_tip(tip);
 			}
 			else if(this->branch_info_mode == TNT_MODE) {
-				assert(last_tip != 0);
+				//assert(last_tip != 0);
 				if(this->start_decode){
 					decode_tnt(this->last_tip);
 				}
@@ -455,15 +456,15 @@ private:
 	uint32_t decode_tnt(uint64_t entry_point); // for TNT mode only
 	void decode_tip(uint64_t tip); // for TIP mode only
 	inline void alter_bitmap(uint64_t addr) {
-#if 0
+//#if 0
 	    uint16_t last_ip16, addr16, pos16;
 	    last_ip16 = (uint16_t)(bitmap_last_ip);
 	    addr16 = (uint16_t)(addr);
 	    pos16 = (uint16_t)(last_ip16 ^ addr16);
 	    trace_bits[pos16]++;
 	    bitmap_last_ip = addr >> 1;
-#endif
-        trace_bits[addr & 0xffff] ++;
+//#endif
+        //trace_bits[addr & 0xffff] ++;
 	    if(tracing_flag)
 	    	control_flows.push_back(addr);
 
