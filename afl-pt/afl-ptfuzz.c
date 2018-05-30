@@ -2395,6 +2395,7 @@ static u8 run_target(char** argv, u32 timeout) {
       start_pt_fuzzer(child_pid);
       write(aa_pipe_fd[1],"s",strlen("s"));
       if (waitpid(child_pid, &status, 0) <= 0) PFATAL("waitpid() failed");
+      //memset(trace_bits, 0, MAP_SIZE);
       stop_pt_fuzzer(trace_bits);
       close(aa_pipe_fd[0]);
       close(aa_pipe_fd[1]);

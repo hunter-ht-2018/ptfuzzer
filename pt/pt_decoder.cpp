@@ -447,7 +447,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
     std::cout << "decode_tnt: before while, start_decode = " << this->start_decode << std::endl; 
 #endif
 	while(cofi_obj != nullptr) {
-		alter_bitmap(cofi_obj->inst_addr);
+		//alter_bitmap(cofi_obj->inst_addr);
 		switch(cofi_obj->type){
 
 			case COFI_TYPE_CONDITIONAL_BRANCH:
@@ -523,6 +523,8 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 		}
 		num_tnt_decoded ++;
         this->num_decoded_branch ++;
+	if(cofi_obj != nullptr)
+		alter_bitmap(cofi_obj->inst_addr);
 	}
 
 	return num_tnt_decoded;
