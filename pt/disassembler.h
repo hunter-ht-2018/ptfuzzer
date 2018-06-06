@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 
-*/
+ */
 
 #ifndef DISASSEMBLER_H
 #define DISASSEMBLER_H
@@ -43,75 +43,75 @@ along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 KHASH_MAP_INIT_INT(ADDR0, uint64_t)
 
 typedef struct{
-	uint16_t opcode;
-	uint8_t modrm;
-	uint8_t opcode_prefix;
+    uint16_t opcode;
+    uint8_t modrm;
+    uint8_t opcode_prefix;
 } cofi_ins;
 
 typedef enum cofi_types{
-	COFI_TYPE_CONDITIONAL_BRANCH, 
-	COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH, 
-	COFI_TYPE_INDIRECT_BRANCH, 
-	COFI_TYPE_NEAR_RET, 
-	COFI_TYPE_FAR_TRANSFERS,
-	NO_COFI_TYPE
+    COFI_TYPE_CONDITIONAL_BRANCH,
+    COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH,
+    COFI_TYPE_INDIRECT_BRANCH,
+    COFI_TYPE_NEAR_RET,
+    COFI_TYPE_FAR_TRANSFERS,
+    NO_COFI_TYPE
 } cofi_type;
 
 
 typedef struct {
-	uint64_t ins_addr;
-	uint64_t target_addr;
-	cofi_type type;
+    uint64_t ins_addr;
+    uint64_t target_addr;
+    cofi_type type;
 } cofi_header;
 
 typedef struct cofi_list {
-	struct cofi_list *list_ptr;
-	struct cofi_list *cofi_ptr;
-	cofi_header *cofi;
+    struct cofi_list *list_ptr;
+    struct cofi_list *cofi_ptr;
+    cofi_header *cofi;
 } cofi_list;
 
 typedef struct disassembler_s{
-	uint8_t* code;
-	uint64_t min_addr;
-	uint64_t max_addr;
-	uint64_t entry_point;
-	void (*handler)(uint64_t);
-	//khash_t(ADDR0) *map;
-	uint64_t *map;
-	cofi_list* list_head;
-	cofi_list* list_element;
-	bool debug;
-	bool is_decode;
+    uint8_t* code;
+    uint64_t min_addr;
+    uint64_t max_addr;
+    uint64_t entry_point;
+    void (*handler)(uint64_t);
+    //khash_t(ADDR0) *map;
+    uint64_t *map;
+    cofi_list* list_head;
+    cofi_list* list_element;
+    bool debug;
+    bool is_decode;
 
 
 } disassembler_t;
 
 //#define DEBUG_COFI_INST
 typedef struct _cofi_inst_t {
-	cofi_type type;
-	uint64_t bb_start_addr;
-	uint64_t inst_addr;
-	uint64_t target_addr;
-	struct _cofi_inst_t* next_cofi;
+    cofi_type type;
+    uint64_t bb_start_addr;
+    uint64_t inst_addr;
+    uint64_t target_addr;
+    struct _cofi_inst_t* next_cofi;
 #ifdef DEBUG_COFI_INST
-	std::string dis_inst;
+    std::string dis_inst;
 #endif
 } cofi_inst_t;
 
 class my_cofi_map {
-	cofi_inst_t** map_data;
-	uint64_t base_address;
-	uint32_t code_size;
+    cofi_inst_t** map_data;
+    uint64_t base_address;
+    uint32_t code_size;
 public:
-	my_cofi_map(uint64_t base_address, uint32_t code_size) : base_address(base_address), code_size(code_size) {
-		map_data = (cofi_inst_t**)malloc(sizeof(cofi_inst_t*) * code_size);
-	}
-	~my_cofi_map() {
-		free(map_data);
-	}
-	inline cofi_inst_t*& operator [](uint64_t addr) {
-		return map_data[addr-base_address];
-	}
+    my_cofi_map(uint64_t base_address, uint32_t code_size) : base_address(base_address), code_size(code_size) {
+        map_data = (cofi_inst_t**)malloc(sizeof(cofi_inst_t*) * code_size);
+    }
+    ~my_cofi_map() {
+        free(map_data);
+    }
+    inline cofi_inst_t*& operator [](uint64_t addr) {
+        return map_data[addr-base_address];
+    }
 };
 
 typedef std::map<uint64_t, cofi_inst_t*> cofi_map_t;

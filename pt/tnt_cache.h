@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 
-*/
+ */
 
 #ifndef TNT_CACHE_H
 #define TNT_CACHE_H
@@ -38,16 +38,16 @@ along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 #define LONG_TNT_MAX_BITS	64-1-LONG_TNT_OFFSET
 
 typedef struct tnt_cache_obj{
-	uint8_t bits;
-	uint64_t data;
-	uint8_t processed;
-	struct tnt_cache_obj* next;
+    uint8_t bits;
+    uint64_t data;
+    uint8_t processed;
+    struct tnt_cache_obj* next;
 }tnt_cache_obj;
 
 typedef struct tnt_cache_s{
-	tnt_cache_obj* head;
-	tnt_cache_obj* next_node;
-	uint8_t counter;
+    tnt_cache_obj* head;
+    tnt_cache_obj* next_node;
+    uint8_t counter;
 } tnt_cache_t;
 
 tnt_cache_t* tnt_cache_init(void);
