@@ -485,7 +485,7 @@ class pt_fuzzer {
 
 public:
     pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);
-    void init(branch_info_mode_t mode=TNT_MODE);
+    void init();
     void start_pt_trace(int pid);
     void stop_pt_trace(uint8_t *trace_bits);
     pt_packet_decoder* debug_stop_pt_trace(uint8_t *trace_bits, branch_info_mode_t mode=TNT_MODE);

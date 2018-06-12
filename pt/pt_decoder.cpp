@@ -62,6 +62,7 @@ pt_fuzzer::pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_
     std::cout << "init pt fuzzer: raw_binary_file = " << raw_binary_file << ", min_address = " << base_address
             << ", max_address = " << max_address << ", entry_point = " << entry_point << std::endl;
 #endif
+
 }
 
 bool pt_fuzzer::config_pt() {
@@ -132,7 +133,7 @@ bool pt_fuzzer::build_cofi_map() {
     return true;
 }
 
-void pt_fuzzer::init(branch_info_mode_t mode) {
+void pt_fuzzer::init() {
     if(!config_pt()) {
         std::cerr << "config PT failed." << std::endl;
         exit(-1);
@@ -157,7 +158,30 @@ void pt_fuzzer::init(branch_info_mode_t mode) {
     std::cout << "build cofi map OK." << std::endl;
 #endif
 
-    this->branch_info_mode = mode;
+    const char* env_branch_mode = getenv("PTFUZER_BRANCH_MODE");
+    if(env_branch_mode != nullptr) {
+        std::string branch_mode(env_branch_mode);
+        if(branch_mode == "TIP_MODE") {
+            this->branch_info_mode = TIP_MODE;
+        }
+        else if(branch_mode == "TNT_MODE") {
+            this->branch_info_mode = TNT_MODE;
+        }
+        else {
+            std::cerr << "config PTFUZER_BRANCH_MODE(" << branch_mode << ") env error, ignore it." << std::endl;
+        }
+    }
+    switch(this->branch_info_mode) {
+    case TIP_MODE:
+        std::cout << "Run ptfuzzer with TIP_MODE" << std::endl;
+        break;
+    case TNT_MODE:
+        std::cout << "Run ptfuzzer with TNT_MODE" << std::endl;
+        break;
+    default:
+        std::cerr << "unkown branch mode." << std::endl;
+        assert(false);
+    }
 }
 
 void pt_fuzzer::start_pt_trace(int pid) {
@@ -193,7 +217,7 @@ void pt_fuzzer::stop_pt_trace(uint8_t *trace_bits) {
     std::cout << "stop pt trace OK." << std::endl;
 #endif
     pt_packet_decoder decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address, this->entry_point);
-    decoder.decode();
+    decoder.decode(this->branch_info_mode);
 #ifdef DEBUG
     std::cout << "decode finished, total number of decoded branch: " << decoder.num_decoded_branch << std::endl;
 #endif
