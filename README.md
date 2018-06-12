@@ -25,7 +25,7 @@ mkdir build
 cd build
 cmake ../
 make
-make install
+make install # install all scripts and binary files to *bin* in the current directory.
 ```
 ## How to run
 
@@ -40,8 +40,8 @@ echo performance | tee cpu*/cpufreq/scaling_governor
 
 * Prepare a your own target program and initial seed files
 ```
-cd ptfuzzer/
-python ptfuzzer.py "-i your/input/directory -o your/output/directory" "your/target/program -arguement"
+cd ptfuzzer/build
+python ./bin/ptfuzzer.py "-i your/input/directory -o your/output/directory" "your/target/program -arguement"
 ```
-* e.g. python ptfuzzer.py "-i ./test/in -o ./test/out" "./test/readelf -a"
+* e.g. python ./bin/ptfuzzer.py "-i ./test/in -o ./test/out" "./test/readelf -a"
 * Please refer to ptfuzzer/afl-pt/doc/ if you need more information and about AFL arguements
