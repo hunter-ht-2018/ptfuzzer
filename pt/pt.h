@@ -315,8 +315,10 @@ private:
         std::cout << "tip: " << std::hex << tip << std::endl;
 #endif
         assert(this->pge_enabled);
-        decode_tnt(this->last_tip);
-
+        if(this->branch_info_mode == TNT_MODE) {
+            decode_tnt(this->last_tip);
+        }
+        decode_tip(tip);
         this->last_tip = tip;
     }
 
@@ -353,7 +355,9 @@ private:
         std::cout << "tip_pgd: " << std::hex << tip << std::endl;
 #endif
 
-        decode_tnt(this->last_tip);
+        if(this->branch_info_mode == TNT_MODE) {
+            decode_tnt(this->last_tip);
+        }
         //tnt_cache_reset(tnt_cache_state);
         assert(count_tnt(tnt_cache_state) == 0);
         this->last_tip = 0;
@@ -374,7 +378,9 @@ private:
 #ifdef DEBUG
         std::cout << "psb packet" << std::endl;
 #endif
-        decode_tnt(this->last_tip);
+        if(this->branch_info_mode == TNT_MODE) {
+            decode_tnt(this->last_tip);
+        }
         assert(count_tnt(tnt_cache_state) == 0);
         (*p) += PT_PKT_PSB_LEN;
         flush();
@@ -388,7 +394,9 @@ private:
 #endif
 
         assert(this->pge_enabled);
-        append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
+        if(this->branch_info_mode == TNT_MODE) {
+            append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
+        }
 #ifdef DEBUG
         //print_tnt(tnt_cache_state);
         std::cout << "count_tnt: " << count_tnt(tnt_cache_state) << std::endl;
@@ -403,7 +411,9 @@ private:
 #endif
 
         assert(this->pge_enabled);
-        append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
+        if(this->branch_info_mode == TNT_MODE) {
+            append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
+        }
 #ifdef DEBUG
         std::cout << "count_tnt: " << count_tnt(tnt_cache_state) << std::endl;
 #endif
