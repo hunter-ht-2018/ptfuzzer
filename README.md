@@ -25,8 +25,10 @@ mkdir build
 cd build
 cmake ../
 make
-make install # install all scripts and binary files to *bin* in the current directory.
+make install 
 ```
+This will install all python scripts and binary files to *bin* in the current directory.
+
 ## How to run
 
 * You need to open the performance switch of the system everytime you reboot the system.
