@@ -64,7 +64,7 @@ if __name__ == '__main__':
         if args.cmd != None:
             os.system(cmd)
         pt_log_file = "pt%d.log" % i
-        cmd = "python simple.py debug_output.txt > %s" % pt_log_file
+        cmd = "python trim_log.py debug_output.txt > %s" % pt_log_file
         print cmd
         if args.cmd != None:
             os.system(cmd)
@@ -74,4 +74,6 @@ if __name__ == '__main__':
     print "check file differences:"
     for i in range(1, num_round):
         pt_filter_file = "fpt%d.log" % i
-        os.system("diff %s fpt0.log" % pt_filter_file)
+        cmd = "diff %s fpt0.log" % pt_filter_file
+        print cmd
+        os.system(cmd)

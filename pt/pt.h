@@ -7,6 +7,7 @@
 //~ #include <dirent.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <assert.h>
 //~ #include <pthread.h>
 #include <stdbool.h>
 //~ #include <stdint.h>
@@ -132,18 +133,18 @@ typedef struct {
 }hwcnt_t;
 
 typedef struct decoder_s{
-	uint8_t* code;
-	uint64_t min_addr;
+    uint8_t* code;
+    uint64_t min_addr;
     uint64_t max_addr;
-	uint64_t entry_point;
-	void (*handler)(uint64_t);
-	uint64_t last_tip;
-	uint64_t last_ip2;
-	bool fup_pkt;
-	bool isr;
-	bool in_range;
-	bool pge_enabled;
-	disassembler_t* disassembler_state;
+    uint64_t entry_point;
+    void (*handler)(uint64_t);
+    uint64_t last_tip;
+    uint64_t last_ip2;
+    bool fup_pkt;
+    bool isr;
+    bool in_range;
+    bool pge_enabled;
+    disassembler_t* disassembler_state;
     tnt_cache_t* tnt_cache_state;
     bool is_decode;
 
@@ -169,7 +170,7 @@ typedef struct {
         pid_t attachedPid;
         int cpuIptBtsFd;
     }linux_t;
-    
+
     decoder_t* decoder;
 } run_t;
 
@@ -183,9 +184,9 @@ typedef enum {
 } dynFileMethod_t;
 
 typedef enum _branch_info_mode_t {
-	RAW_PACKET_MODE,
-	TIP_MODE,
-	TNT_MODE
+    RAW_PACKET_MODE,
+    TIP_MODE,
+    TNT_MODE
 } branch_info_mode_t;
 
 bool perf_config(pid_t pid, run_t* run);
@@ -209,53 +210,100 @@ void print_bitmap();
 uint8_t* get_trace_bits();
 
 typedef struct binary_info_t {
-	uint8_t* code;
-	uint64_t base_address;
-	uint64_t max_address;
-	uint64_t entry_point;
+    uint8_t* code;
+    uint64_t base_address;
+    uint64_t max_address;
+    uint64_t entry_point;
 };
+typedef enum _fup_state_t {
+    NO_FUP_state,
+    FUP_state,
+    FUP_PGD_state,
+    FUP_PGE_state
+}fup_state_t;
+
+typedef struct _packet_state_t {
+    fup_state_t state = NO_FUP_state;
+    uint64_t fup_addr = 0;
+    uint64_t fup_pgd_addr = 0;
+    uint64_t fup_pge_addr = 0;
+
+    inline void fup(uint64_t addr) {
+        state = FUP_state;
+        fup_addr = addr;
+    }
+    inline void pgd(uint64_t addr) {
+        assert(state == FUP_state || state == NO_FUP_state);
+        if(state == FUP_state) {
+            state = FUP_PGD_state;
+            fup_pgd_addr = addr;
+        }
+        else {
+            state = NO_FUP_state;
+        }
+    }
+    inline void pge(uint64_t addr) {
+        if(state == FUP_PGD_state) {
+            state = FUP_PGE_state;
+            fup_pge_addr = addr;
+        }
+        else {
+            state = NO_FUP_state;
+        }
+    }
+    inline void tip(uint64_t addr) {
+        state = NO_FUP_state;
+    }
+    inline void reset() {
+        state = NO_FUP_state;
+        fup_addr = 0;
+        fup_pgd_addr = 0;
+        fup_pge_addr = 0;
+    }
+    bool is_fup_state() { return state == FUP_state; }
+    bool is_fup_pgd_state() { return state == FUP_PGD_state && fup_pgd_addr == 0; }
+    bool is_fup_pge_state() { return state == FUP_PGE_state && 	fup_pge_addr == fup_addr; }
+} packet_state_t;
 
 class pt_packet_decoder{
-	uint64_t min_address;
-	uint64_t max_address;
-	uint64_t app_entry_point;
-	uint64_t last_tip = 0;
-	uint64_t last_ip2 = 0;
-	bool start_decode = false;
+    uint64_t min_address;
+    uint64_t max_address;
+    uint64_t app_entry_point;
+    uint64_t last_tip = 0;
+    uint64_t last_ip2 = 0;
+    bool start_decode = false;
 
-	bool fup_pkt = false;
-	bool isr = false;
-	bool in_range = false;
-	tnt_cache_t* tnt_cache_state = nullptr;
-	bool pge_enabled = false;
-	uint64_t aux_head;
-	uint64_t aux_tail;
-	uint8_t* pt_packets;
+    bool isr = false;
+    bool in_range = false;
+    tnt_cache_t* tnt_cache_state = nullptr;
+    bool pge_enabled = false;
+    uint64_t aux_head;
+    uint64_t aux_tail;
+    uint8_t* pt_packets;
 
-	cofi_map_t& cofi_map;
-	uint64_t bitmap_last_ip = 0;
-	uint8_t* trace_bits;
+    cofi_map_t& cofi_map;
+    uint64_t bitmap_last_ip = 0;
+    uint8_t* trace_bits;
 
-	branch_info_mode_t branch_info_mode = TNT_MODE;
-	bool tracing_flag = false;
+    branch_info_mode_t branch_info_mode = TNT_MODE;
+    bool tracing_flag = false;
+
+    packet_state_t pkt_state;
 
 public:
     uint64_t num_decoded_branch = 0;
 
 public:
-	pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address, uint64_t entry_point);
-	~pt_packet_decoder();
-	void set_tracing_flag() { tracing_flag = true; }
-	void decode(branch_info_mode_t mode=TNT_MODE);
-	uint8_t* get_trace_bits() { return trace_bits; }
+    pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address, uint64_t entry_point);
+    ~pt_packet_decoder();
+    void set_tracing_flag() { tracing_flag = true; }
+    void decode(branch_info_mode_t mode=TNT_MODE);
+    uint8_t* get_trace_bits() { return trace_bits; }
 private:
-	uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip);
+    uint64_t get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip);
 
-	inline void tip_handler(uint8_t** p, uint8_t** end){
-#ifdef DEBUG
-        //std::cout << "tip: " << count_tnt(this->tnt_cache_state) << std::endl;
-#endif
-		uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+    inline void tip_handler(uint8_t** p, uint8_t** end){
+        uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
         if(tip == app_entry_point) {
 #ifdef DEBUG
             std::cout << "enter program entry point" << std::endl;
@@ -266,30 +314,18 @@ private:
 #ifdef DEBUG
         std::cout << "tip: " << std::hex << tip << std::endl;
 #endif
-        if(this->branch_info_mode == TIP_MODE) {
-        	if(this->start_decode) record_tip(tip);
-        	return;
+        assert(this->pge_enabled);
+        if(this->branch_info_mode == TNT_MODE) {
+            decode_tnt(this->last_tip);
         }
-        else if(this->branch_info_mode == TNT_MODE) {
-			if(this->start_decode && this->last_tip != 0){
-				decode_tnt(this->last_tip);
-			}
-			if(out_of_bounds(tip)) {
-				this->last_tip = 0;
-			}
-			else{
-				this->last_tip = tip;
-			}
-        }
-	}
+        decode_tip(tip);
+        this->last_tip = tip;
+    }
 
-	inline void tip_pge_handler(uint8_t** p, uint8_t** end){
-#ifdef DEBUG
-        //std::cout << "tip_pge_handler" << std::endl;
-#endif
-		this->pge_enabled = true;
-		this->last_tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
-        if(last_tip == app_entry_point) {
+    inline void tip_pge_handler(uint8_t** p, uint8_t** end){
+        this->pge_enabled = true;
+        uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+        if(tip == app_entry_point) {
 #ifdef DEBUG
             std::cout << "enter program entry point" << std::endl;
 #endif
@@ -297,25 +333,17 @@ private:
         }
 
 #ifdef DEBUG
-        std::cout << "tip_pge: " << std::hex << last_tip << std::endl;
+        std::cout << "tip_pge: " << std::hex << tip << std::endl;
 #endif
-        if(this->branch_info_mode == TIP_MODE) {
-        	//if(this->start_decode) record_tip(last_tip);
-        }
-        else if(this->branch_info_mode == TNT_MODE) {
-			if(out_of_bounds(last_tip)) {
-				this->last_tip = 0;
-			}
-        }
-	}
+        assert(this->last_tip == 0);
+        this->last_tip = tip;
 
-	inline void tip_pgd_handler(uint8_t** p, uint8_t** end){
-#ifdef DEBUG
-        //std::cout << "enter tip_pgd_handler" << std::endl;
-#endif
-		this->pge_enabled = false;
+    }
 
-		uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
+    /*handle the TIP.PGD packet.*/
+    inline void tip_pgd_handler(uint8_t** p, uint8_t** end){
+        this->pge_enabled = false;
+        uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
         if(tip == app_entry_point) {
 #ifdef DEBUG
             std::cout << "enter program entry point" << std::endl;
@@ -327,179 +355,149 @@ private:
         std::cout << "tip_pgd: " << std::hex << tip << std::endl;
 #endif
 
-        if(this->branch_info_mode == TIP_MODE) {
-        	//if(this->start_decode) record_tip(tip);
+        if(this->branch_info_mode == TNT_MODE) {
+            decode_tnt(this->last_tip);
         }
-        else if(this->branch_info_mode == TNT_MODE) {
-			if(this->start_decode && this->last_tip != 0){
-				decode_tnt(this->last_tip);
-			}
-			if(out_of_bounds(tip)) {
-				this->last_tip = 0;
-			}
-			else{
-				this->last_tip = tip;
-			}
-        }
-	}
+        //tnt_cache_reset(tnt_cache_state);
+        assert(count_tnt(tnt_cache_state) == 0);
+        this->last_tip = 0;
+    }
 
-	inline void tip_fup_handler(uint8_t** p, uint8_t** end){
-#ifdef DEBUG
-        //std::cout << "enter tip_fup_handler" << std::endl;
-#endif
-
-		uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
-
+    /*handler the fup packets.*/
+    inline void tip_fup_handler(uint8_t** p, uint8_t** end){
+        uint64_t tip = get_ip_val(p, *end, (*(*p)++ >> PT_PKT_TIP_SHIFT), &this->last_ip2);
 #ifdef DEBUG
         std::cout << "tip_fup: " << std::hex << tip << std::endl;
 #endif
-        if(this->branch_info_mode == TIP_MODE) {
-        	//doing nothing
-        }
-        else if(this->branch_info_mode == TNT_MODE) {
-			if(this->start_decode && this->last_tip != 0){
-				decode_tnt(this->last_tip);
-			}
-			if(out_of_bounds(tip)) {
-				this->last_tip = 0;
-			}
-			else{
-				this->last_tip = tip;
-			}
-        }
-	}
+        //just change the state
+        if (this->last_tip == 0)
+            this->last_tip = tip;
+    }
 
-	inline void psb_handler(uint8_t** p){
+    inline void psb_handler(uint8_t** p){
 #ifdef DEBUG
-		std::cout << "psb packet" << std::endl;
+        std::cout << "psb packet" << std::endl;
 #endif
-		(*p) += PT_PKT_PSB_LEN;
-		flush();
-	}
+        if(this->branch_info_mode == TNT_MODE) {
+            decode_tnt(this->last_tip);
+        }
+        assert(count_tnt(tnt_cache_state) == 0);
+        (*p) += PT_PKT_PSB_LEN;
+        flush();
+    }
 
-    void print_tnt(tnt_cache_t* tnt_cache);
-	inline void tnt8_handler(uint8_t** p){
+
+    inline void tnt8_handler(uint8_t** p){
         //uint64_t old_count = count_tnt(tnt_cache_state);
 #ifdef DEBUG
-		std::cout << "tnt8: " << count_tnt_bits(true, (uint64_t)(**p)) << std::endl;
+        std::cout << "tnt8: " << tnt_to_string(true, (uint64_t)(**p)) << std::endl;
 #endif
-		//if (this->pge_enabled)
-#ifdef DEBUG
-		//std::cout << start_decode << ", " << this->pge_enabled << std::endl;
-#endif
-		if (this->start_decode && this->pge_enabled) {
-        	//tnt_cache_t* tnt_cache = tnt_cache_init();
-        	if(this->last_tip != 0){
-				append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
-				//print_tnt(tnt_cache_state);
-#ifdef DEBUG
-        		std::cout << "count_tnt: " << count_tnt(tnt_cache_state) << std::endl;
-#endif
-        		//tnt_cache_destroy(tnt_cache);
-			}
+
+        assert(this->pge_enabled);
+        if(this->branch_info_mode == TNT_MODE) {
+            append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
         }
-        //uint64_t new_count = count_tnt(tnt_cache_state);
 #ifdef DEBUG
-        //std::cout << new_count - old_count << std::endl;
+        //print_tnt(tnt_cache_state);
+        std::cout << "count_tnt: " << count_tnt(tnt_cache_state) << std::endl;
+        //tnt_cache_destroy(tnt_cache);
 #endif
-		(*p)++;
-	}
+        (*p)++;
+    }
 
-	inline void long_tnt_handler(uint8_t** p){
+    inline void long_tnt_handler(uint8_t** p){
 #ifdef DEBUG
-		std::cout << "long_tnt: " << count_tnt_bits(false, (uint64_t)(**p)) << std::endl;;
+        std::cout << "long_tnt: " << tnt_to_string(false, (uint64_t)(**p)) << std::endl;;
 #endif
-		if (this->start_decode && this->pge_enabled) {
-        	//tnt_cache_t* tnt_cache = tnt_cache_init();
-        	if(this->last_tip != 0){
-	        	append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
+
+        assert(this->pge_enabled);
+        if(this->branch_info_mode == TNT_MODE) {
+            append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
+        }
 #ifdef DEBUG
-        		std::cout << "count_tnt: " << count_tnt(tnt_cache_state) << std::endl;
+        std::cout << "count_tnt: " << count_tnt(tnt_cache_state) << std::endl;
 #endif
-        	}
-        	//tnt_cache_destroy(tnt_cache);
-    	}
-		(*p) += PT_PKT_LTNT_LEN;
-	}
+        (*p) += PT_PKT_LTNT_LEN;
+    }
 
-	inline bool out_of_bounds(uint64_t addr) {
-		if(addr < this->min_address || addr > this->max_address)
-			return true;
-		return false;
-	}
+    inline bool out_of_bounds(uint64_t addr) {
+        if(addr < this->min_address || addr > this->max_address)
+            return true;
+        return false;
+    }
 
-	void flush();
-	uint32_t decode_tnt(uint64_t entry_point);
-	void record_tip(uint64_t tip);
-	inline void alter_bitmap(uint64_t addr) {
-		//64位地址截断为16位
-#if 0
-	    uint16_t last_ip16, addr16, pos16;
-	    last_ip16 = (uint16_t)(bitmap_last_ip);
-	    addr16 = (uint16_t)(addr);
-	    pos16 = (uint16_t)(last_ip16 ^ addr16);
-	    trace_bits[pos16]++;
-	    bitmap_last_ip = addr >> 1;
-#endif
-        trace_bits[addr & 0xffff] ++;
-	    if(tracing_flag)
-	    	control_flows.push_back(addr);
+    void print_tnt(tnt_cache_t* tnt_cache);
+    void flush();
+    uint32_t decode_tnt(uint64_t entry_point); // for TNT mode only
+    void decode_tip(uint64_t tip); // for TIP mode only
+    inline void alter_bitmap(uint64_t addr) {
+        //#if 0
+        uint16_t last_ip16, addr16, pos16;
+        last_ip16 = (uint16_t)(bitmap_last_ip);
+        addr16 = (uint16_t)(addr);
+        pos16 = (uint16_t)(last_ip16 ^ addr16);
+        trace_bits[pos16]++;
+        bitmap_last_ip = addr >> 1;
+        //#endif
+        //trace_bits[addr & 0xffff] ++;
+        if(tracing_flag)
+            control_flows.push_back(addr);
 
-	}
+    }
 private:
-	std::vector<uint64_t> control_flows;
+    std::vector<uint64_t> control_flows;
 public:
-	void dump_control_flows(FILE* f);
+    void dump_control_flows(FILE* f);
 };
 
 
 class pt_tracer {
-	uint8_t* perf_pt_header;
-	uint8_t* perf_pt_aux;
-	int trace_pid;
-	int perf_fd = -1;
-	//pt_decode_info_t decode_info;
+    uint8_t* perf_pt_header;
+    uint8_t* perf_pt_aux;
+    int trace_pid;
+    int perf_fd = -1;
+    //pt_decode_info_t decode_info;
 public:
-	pt_tracer(int pid) ;
-	bool open_pt(int pt_perf_type);
-	bool start_trace();
-	bool stop_trace();
-	void close_pt();
-	uint8_t* get_perf_pt_header() { return perf_pt_header; }
-	uint8_t* get_perf_pt_aux() { return perf_pt_aux; }
+    pt_tracer(int pid) ;
+    bool open_pt(int pt_perf_type);
+    bool start_trace();
+    bool stop_trace();
+    void close_pt();
+    uint8_t* get_perf_pt_header() { return perf_pt_header; }
+    uint8_t* get_perf_pt_aux() { return perf_pt_aux; }
 };
 
 class pt_fuzzer {
-	std::string raw_binary_file;
-	uint64_t base_address;
-	uint64_t max_address;
-	uint64_t entry_point;
+    std::string raw_binary_file;
+    uint64_t base_address;
+    uint64_t max_address;
+    uint64_t entry_point;
 
-	int32_t perfIntelPtPerfType = -1;
-	cofi_map_t cofi_map;
-	uint8_t* code;
+    int32_t perfIntelPtPerfType = -1;
+    cofi_map_t cofi_map;
+    uint8_t* code;
 
-	pt_tracer* trace;
+    pt_tracer* trace;
 
-	uint64_t num_runs = 0;
-	//pt_packet_decoder* decoder = nullptr;
-	branch_info_mode_t branch_info_mode = TNT_MODE;
+    uint64_t num_runs = 0;
+    //pt_packet_decoder* decoder = nullptr;
+    branch_info_mode_t branch_info_mode = TNT_MODE;
 
 public:
-	pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);
-	void init(branch_info_mode_t mode=TNT_MODE);
-	void start_pt_trace(int pid);
-	void stop_pt_trace(uint8_t *trace_bits);
-	pt_packet_decoder* debug_stop_pt_trace(uint8_t *trace_bits, branch_info_mode_t mode=TNT_MODE);
-	std::chrono::time_point<std::chrono::steady_clock> start;
-	std::chrono::time_point<std::chrono::steady_clock> end;
-	std::chrono::duration<double> diff;
+    pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);
+    void init();
+    void start_pt_trace(int pid);
+    void stop_pt_trace(uint8_t *trace_bits);
+    pt_packet_decoder* debug_stop_pt_trace(uint8_t *trace_bits, branch_info_mode_t mode=TNT_MODE);
+    std::chrono::time_point<std::chrono::steady_clock> start;
+    std::chrono::time_point<std::chrono::steady_clock> end;
+    std::chrono::duration<double> diff;
 private:
-	bool load_binary();
-	bool build_cofi_map();
-	bool config_pt();
+    bool load_binary();
+    bool build_cofi_map();
+    bool config_pt();
 
-	bool open_pt();
+    bool open_pt();
 
 };
 

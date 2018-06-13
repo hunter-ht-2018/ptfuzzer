@@ -63,26 +63,26 @@ bool read_raw_bin()
 }
 
 int main (int argc, char** argv) {
-	if(!read_min_max()){
-		std::cerr << "read min and max addr failed." << std::endl;
-	}
-	
-	if(!read_raw_bin()){
-		std::cerr << "read raw binary failed." << std::endl;
-	}
-	cofi_map_t cofi_map;
-	uint32_t num_cofi_inst = disassemble_binary(raw_bin_buf, min_addr_cle, max_addr_cle, cofi_map);
-	uint64_t addr_start = min_addr_cle;
-	cofi_inst_t* head = cofi_map[addr_start];
-	while(head == nullptr) {
-		addr_start ++;
-		head = cofi_map[addr_start];
-	}
-	std::cout << "first address contain cofi is : " << addr_start << std::endl;
-	while(head != nullptr) {
-		std::cout << std::hex << head->inst_addr << " -> " << head->target_addr << std::endl;
-		head = head->next_cofi;
-	}
-	std::cout << "number of cofi inst: " << num_cofi_inst << std::endl;
-	return 0;
+    if(!read_min_max()){
+        std::cerr << "read min and max addr failed." << std::endl;
+    }
+
+    if(!read_raw_bin()){
+        std::cerr << "read raw binary failed." << std::endl;
+    }
+    cofi_map_t cofi_map;
+    uint32_t num_cofi_inst = disassemble_binary(raw_bin_buf, min_addr_cle, max_addr_cle, cofi_map);
+    uint64_t addr_start = min_addr_cle;
+    cofi_inst_t* head = cofi_map[addr_start];
+    while(head == nullptr) {
+        addr_start ++;
+        head = cofi_map[addr_start];
+    }
+    std::cout << "first address contain cofi is : " << addr_start << std::endl;
+    while(head != nullptr) {
+        std::cout << std::hex << head->inst_addr << " -> " << head->target_addr << std::endl;
+        head = head->next_cofi;
+    }
+    std::cout << "number of cofi inst: " << num_cofi_inst << std::endl;
+    return 0;
 }
