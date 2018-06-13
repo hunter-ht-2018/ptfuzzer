@@ -195,7 +195,7 @@ void pt_fuzzer::init() {
 
     std::map<std::string, std::string> config_kvs;
     load_config_file(config_kvs);
-    std::string branch_mode = config_kvs["PTFUZER_BRANCH_MODE"];
+    std::string branch_mode = config_kvs["BRANCH_MODE"];
     if(branch_mode != "") {
         if(branch_mode == "TIP_MODE") {
             this->branch_info_mode = TIP_MODE;
@@ -204,11 +204,11 @@ void pt_fuzzer::init() {
             this->branch_info_mode = TNT_MODE;
         }
         else {
-            std::cerr << "config PTFUZER_BRANCH_MODE(" << branch_mode << ") env error, ignore it." << std::endl;
+            std::cerr << "config BRANCH_MODE(" << branch_mode << ") env error, ignore it." << std::endl;
         }
     }
     else {
-        std::cerr << "PTFUZER_BRANCH_MODE is null, using default TNT mode." << std::endl;
+        std::cerr << "BRANCH_MODE is null, using default TNT mode." << std::endl;
     }
     switch(this->branch_info_mode) {
     case TIP_MODE:
