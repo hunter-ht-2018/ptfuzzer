@@ -67,7 +67,9 @@ void load_config_file(std::map<std::string, std::string>& config_kvs) {
         return;
     }
     while(fgets(line_buf, 4096, f) != nullptr) {
-        std::istringstream is_line(line_buf);
+        std::string line(line_buf);
+        if(line[0] == '#') continue;
+        std::istringstream is_line(line);
         std::string key;
         if( std::getline(is_line, key, '=') ) {
             std::string value;
