@@ -1,6 +1,7 @@
 #!/bin/sh
 
 
+sudo apt-get install python python-pip
 if [ ! -f "/usr/lib/libcapstone.a" ]; then
 	echo "[+] installing libcapstone-dev..."
 	sudo apt-get install libcapstone-dev
@@ -11,5 +12,6 @@ if [ ! -d "/usr/local/lib/python2.7/dist-packages/cle/" ]; then
 	sudo pip install cle
 fi
 
+sudo apt-get install msr-tools
+
 echo "[+] All conditions have been satisfied."
-echo "[+] Please run ./install_pt.sh"
