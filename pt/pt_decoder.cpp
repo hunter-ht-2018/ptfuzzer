@@ -4,6 +4,8 @@
 #include <linux/hw_breakpoint.h>
 #include <assert.h>
 #include <vector>
+#include <sstream>
+#include <map>
 #include "pt.h"
 
 #define ATOMIC_POST_OR_RELAXED(x, y) __atomic_fetch_or(&(x), y, __ATOMIC_RELAXED)
