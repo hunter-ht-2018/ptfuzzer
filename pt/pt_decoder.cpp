@@ -55,6 +55,29 @@ static ssize_t files_readFileToBufMax(char* fileName, uint8_t* buf, size_t fileM
     return readSz;
 }
 
+void load_config_file(std::map<std::string, std::string>& config_kvs) {
+    char line_buf[4096];
+    FILE* f = fopen("ptfuzzer.conf", "r");
+    if(f == nullptr) {
+        f = fopen("/etc/ptfuzzer.conf", "r");
+    }
+    if(f == nullptr) {
+        return;
+    }
+    while(fgets(line_buf, 4096, f) != nullptr) {
+        std::istringstream is_line(line_buf);
+        std::string key;
+        if( std::getline(is_line, key, '=') ) {
+            std::string value;
+            if( std::getline(is_line, value) )
+                config_kvs[key] = value;
+        }
+    }
+
+    fclose(f);
+
+}
+
 pt_fuzzer::pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point) :
 	        raw_binary_file(raw_binary_file), base_address(base_address), max_address(max_address), entry_point(entry_point),
 	        code(nullptr) , trace(nullptr){
@@ -158,9 +181,10 @@ void pt_fuzzer::init() {
     std::cout << "build cofi map OK." << std::endl;
 #endif
 
-    const char* env_branch_mode = getenv("PTFUZER_BRANCH_MODE");
-    if(env_branch_mode != nullptr) {
-        std::string branch_mode(env_branch_mode);
+    std::map<std::string, std::string> config_kvs;
+    load_config_file(config_kvs);
+    std::string branch_mode = config_kvs["PTFUZER_BRANCH_MODE"];
+    if(branch_mode != "") {
         if(branch_mode == "TIP_MODE") {
             this->branch_info_mode = TIP_MODE;
         }
@@ -170,6 +194,9 @@ void pt_fuzzer::init() {
         else {
             std::cerr << "config PTFUZER_BRANCH_MODE(" << branch_mode << ") env error, ignore it." << std::endl;
         }
+    }
+    else {
+        std::cerr << "PTFUZER_BRANCH_MODE is null, using default TNT mode." << std::endl;
     }
     switch(this->branch_info_mode) {
     case TIP_MODE:
