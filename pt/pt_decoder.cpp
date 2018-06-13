@@ -7,6 +7,7 @@
 #include <sstream>
 #include <map>
 #include "pt.h"
+#include "utils.h"
 
 #define ATOMIC_POST_OR_RELAXED(x, y) __atomic_fetch_or(&(x), y, __ATOMIC_RELAXED)
 #define ATOMIC_GET(x) __atomic_load_n(&(x), __ATOMIC_SEQ_CST)
@@ -68,6 +69,7 @@ void load_config_file(std::map<std::string, std::string>& config_kvs) {
     }
     while(fgets(line_buf, 4096, f) != nullptr) {
         std::string line(line_buf);
+        trim(line);
         if(line[0] == '#') continue;
         std::istringstream is_line(line);
         std::string key;
