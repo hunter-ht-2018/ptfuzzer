@@ -47,3 +47,11 @@ python ./bin/ptfuzzer.py "-i your/input/directory -o your/output/directory" "you
 ```
 * e.g. python ./bin/ptfuzzer.py "-i ./test/in -o ./test/out" "./test/readelf -a"
 * Please refer to ptfuzzer/afl-pt/doc/ if you need more information and about AFL arguements
+
+## config
+You can edit a config file named ptfuzzer.conf to control the branch collection stratagy used. You can put ptfuzzer.conf in the current working directory or /etc/. Here is an example:
+```
+#BRANCH_MODE=TNT_MODE
+BRANCH_MODE=TIP_MODE
+```
+In TIP_MODE, only the far control flow change encoded in the TIP packets are recorded, while TNT_MODE also includes the conditional branch encoded in the TNT packets.
