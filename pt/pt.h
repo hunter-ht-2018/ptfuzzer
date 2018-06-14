@@ -480,10 +480,6 @@ class pt_fuzzer {
     pt_tracer* trace;
 
     uint64_t num_runs = 0;
-    //pt_packet_decoder* decoder = nullptr;
-    branch_info_mode_t branch_info_mode = TNT_MODE;
-
-    uint64_t perf_aux_size = DEFAULT_PERF_AUX_SZ;
 
 public:
     pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);
@@ -503,4 +499,12 @@ private:
 
 };
 
+class fuzzer_config {
+    uint64_t perf_aux_size = DEFAULT_PERF_AUX_SZ;
+    branch_info_mode_t branch_mode = TNT_MODE;
+public:
+    fuzzer_config();
+    void load_config();
+};
+fuzzer_config& get_fuzzer_config();
 #endif
