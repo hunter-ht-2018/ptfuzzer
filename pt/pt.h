@@ -44,7 +44,7 @@
 /* Size (in bytes) for report data to be stored in stack before written to file */
 #define _HF_REPORT_SIZE 8192
 #define _HF_PERF_MAP_SZ (1024 * 512)
-#define _HF_PERF_AUX_SZ (16 * 1024 * 1024)
+#define DEFAULT_PERF_AUX_SZ (4 * 1024 * 1024)
 #define _HF_PERF_BITMAP_SIZE_16M (1024U * 1024U * 16U)
 #define _HF_PERF_BITMAP_BITSZ_MASK 0x7ffffff
 
@@ -482,6 +482,8 @@ class pt_fuzzer {
     uint64_t num_runs = 0;
     //pt_packet_decoder* decoder = nullptr;
     branch_info_mode_t branch_info_mode = TNT_MODE;
+
+    uint64_t perf_aux_size = DEFAULT_PERF_AUX_SZ;
 
 public:
     pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);

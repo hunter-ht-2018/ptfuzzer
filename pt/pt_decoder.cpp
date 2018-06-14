@@ -221,6 +221,15 @@ void pt_fuzzer::init() {
         std::cerr << "unkown branch mode." << std::endl;
         assert(false);
     }
+
+    // load aux buffer size
+    std::string config_aux_buffer_size = config_kvs["PERF_AUX_BUFFER_SIZE"];
+    if(config_aux_buffer_size != "") {
+        uint64_t msize = std::stoul(config_aux_buffer_size, nullptr, 0);
+        this->perf_aux_size = msize * 1024 * 1024;
+        std::cout << "Using perf AUX buffer size: " << msize << " MB." << std::endl;
+    }
+
 }
 
 void pt_fuzzer::start_pt_trace(int pid) {
