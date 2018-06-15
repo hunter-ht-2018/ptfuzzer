@@ -500,10 +500,12 @@ private:
 };
 
 class fuzzer_config {
+public:
     uint64_t perf_aux_size = DEFAULT_PERF_AUX_SZ;
     branch_info_mode_t branch_mode = TNT_MODE;
 public:
-    fuzzer_config();
+    fuzzer_config() {load_config();}
+protected:
     void load_config();
 };
 fuzzer_config& get_fuzzer_config();

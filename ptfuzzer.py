@@ -16,8 +16,9 @@ def load_config():
     if f != None:
         for line in f.readlines():
             pos = line.find('#')
-            print "pos = ", pos 
-            line = line[0, pos]
+            #print "pos = ", pos 
+            line = line[0:pos]
+            #print line
             line.strip()
             if len(line) == 0:
                 continue
@@ -34,6 +35,7 @@ conf = load_config()
 mem_limit = None
 if conf.has_key("MEM_LIMIT"):
     mem_limit = int(conf["MEM_LIMIT"])
+    print "config MEM_LIMIT to", mem_limit
     
 parser = argparse.ArgumentParser(description='Process arguements and bin name.')
 parser.add_argument('afl_args', type=str, help='arguements of AFL')

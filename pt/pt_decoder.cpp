@@ -92,7 +92,7 @@ void load_config_file(std::map<std::string, std::string>& config_kvs) {
 }
 
 void fuzzer_config::load_config() {
-    std::map<std::string, std::string>& config_kvs;
+    std::map<std::string, std::string> config_kvs;
     load_config_file(config_kvs);
 
     std::string branch_mode = config_kvs["BRANCH_MODE"];
@@ -133,7 +133,6 @@ void fuzzer_config::load_config() {
 
 fuzzer_config& get_fuzzer_config() {
     static fuzzer_config config;
-    config.load_config();
     return config;
 }
 
