@@ -10,10 +10,15 @@ from run_with_pt import binary_loaded_info
 
 def load_config():
     config_kvs = {}
-    f = open('ptfuzzer.conf', 'r')
-    if f == None:
-        f = open('/etc/ptfuzzer.conf', 'r')
-    if f != None:
+    config_file = None
+    candidates = ['ptfuzzer.conf', '/etc/ptfuzzer.conf']
+    for c in candidates:
+        if os.path.isfile(c):
+            config_file = c
+            break;
+    if config_file == None:
+        return {}
+    with open(config_file) as f:
         for line in f.readlines():
             pos = line.find('#')
             #print "pos = ", pos 
@@ -28,7 +33,6 @@ def load_config():
             key = words[0]
             value = words[1]
             config_kvs[key] = value;
-        f.close()
     return config_kvs
 
 conf = load_config()

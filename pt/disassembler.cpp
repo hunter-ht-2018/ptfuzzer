@@ -19,6 +19,7 @@ along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 
  */
 #include <map>
+#include <iostream>
 #include "disassembler.h"
 
 #define LOOKUP_TABLES		5
@@ -524,7 +525,13 @@ static cofi_type get_inst_type(cs_insn *ins){
     return NO_COFI_TYPE;
 }
 
-
+static void print_inst(cs_insn* insn) {
+    char byte_str[64];
+    for(int i = 0; i < insn->size; i ++) {
+        sprintf(byte_str + i * 3, "%02x ", insn->bytes[i]);
+    }
+    printf("%lx:\t%-32s\t%s\t%s\t\t\n", insn->address, byte_str, insn->mnemonic, insn->op_str);
+}
 
 uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t max_address, cofi_map_t& cofi_map){
     csh handle;
@@ -534,6 +541,7 @@ uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t
     uint64_t num_cofi_inst = 0;
 
     size_t code_size = max_address - base_address;
+    std::cout << "disassmble: total code size is: " << code_size << std::endl;
     uint64_t address = base_address;
 
     if (cs_open(CS_ARCH_X86, CS_MODE_64, &handle) != CS_ERR_OK)
@@ -552,6 +560,10 @@ uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t
         }
 
         type = get_inst_type(insn);
+#ifdef DEBUG
+        //printf("%lx:\t(%d)\t%s\t%s\t\t\n", insn->address, type, insn->mnemonic, insn->op_str);
+        print_inst(insn);
+#endif
         num_inst ++;
 
         if(current_cofi == nullptr) {
@@ -573,9 +585,6 @@ uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t
             }
             else {
                 current_cofi->target_addr = 0;
-#ifdef DEBUG
-                printf("%lx:\t(%d)\t%s\t%s\t\t\n", insn->address, type, insn->mnemonic, insn->op_str);
-#endif	
             }
             current_cofi->next_cofi = nullptr;
             cofi_map[insn->address] = current_cofi;
@@ -586,7 +595,7 @@ uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t
             cofi_map[insn->address] = current_cofi;
         }
     }
-
+    std::cout << "disassmble: undecoded size is: " << code_size << std::endl;   
     cs_free(insn, 1);
     cs_close(&handle);
     return num_cofi_inst;

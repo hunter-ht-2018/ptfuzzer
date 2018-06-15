@@ -204,13 +204,11 @@ bool pt_fuzzer::load_binary() {
 }
 
 bool pt_fuzzer::build_cofi_map() {
-#ifdef DEBUG
     std::cout << "start to disassmble binary..." << std::endl;
-#endif
     uint32_t num_inst = disassemble_binary( this->code, this->base_address, this->max_address, this->cofi_map);
-#ifdef DEBUG
     std::cout << "total number of cofi instructions: " << num_inst << std::endl;
-#endif
+    std::cout << "first addr = " << cofi_map.begin()->first << std::endl;
+    std::cout << "last addr = " << (cofi_map.rbegin())->first << std::endl; 
     return true;
 }
 
@@ -488,6 +486,7 @@ void pt_packet_decoder::decode_tip(uint64_t tip) {
     cofi_inst_t* cofi_obj = this->cofi_map[tip];
     if(cofi_obj == nullptr){
         std::cerr << "can not find cofi for tip: " << std::hex << "0x" << tip << std::endl;
+        assert(false);
         return;
     }
     //if(cofi_obj->bb_start_addr != tip) {
