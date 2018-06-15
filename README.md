@@ -48,7 +48,8 @@ python ./bin/ptfuzzer.py "-i your/input/directory -o your/output/directory" "you
 * e.g. python ./bin/ptfuzzer.py "-i ./test/in -o ./test/out" "./test/readelf -a"
 * Please refer to ptfuzzer/afl-pt/doc/ if you need more information and about AFL arguements
 
-## Config
+## Configurate runtime parameters
+
 You can edit a config file to control the runtime parameters of ptfuzzer. The config file must be named ptfuzzer.conf, and it can be put in the current working directory or /etc/. Here is an example:
 ```
 #BRANCH_MODE=TNT_MODE
@@ -56,8 +57,8 @@ BRANCH_MODE=TIP_MODE
 MEM_LIMIT=100            # afl -m argument
 PERF_AUX_BUFFER_SIZE=32  # the size of buffer used to store PT packets.
 ```
-*BRANCH_MODE* controls the methods ptfuzzer used to collect branch information. In TIP_MODE, only the far control flow change encoded in the TIP packets are recorded, while TNT_MODE also includes the conditional branch encoded in the TNT packets.
+*BRANCH_MODE* controls the methods ptfuzzer uses to collect branch information. In TIP_MODE, only the control flow change encoded in the TIP packets are recorded, while TNT_MODE also includes the conditional branch encoded in the TNT packets.
 
-*MEM_LIMIT* controls the memory limits used for the target program. It is the "-m" arguments passed to afl.
+*MEM_LIMIT* controls the memory limits of the target program. It is the "-m" arguments passed to afl.
 
 *PERF_AUX_BUFFER_SIZE* controls the size of buffer ptfuzzer allocates for storing PT packest. The PT packets may be truncated if the buffer size is not big enough. 
