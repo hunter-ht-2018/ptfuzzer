@@ -266,10 +266,14 @@ typedef struct _packet_state_t {
     bool is_fup_pge_state() { return state == FUP_PGE_state && 	fup_pge_addr == fup_addr; }
 } packet_state_t;
 
+class pt_fuzzer;
 class pt_packet_decoder{
+    pt_fuzzer* fuzzer;
     uint64_t min_address;
     uint64_t max_address;
     uint64_t app_entry_point;
+    cofi_map_t& cofi_map;
+
     uint64_t last_tip = 0;
     uint64_t last_ip2 = 0;
     bool start_decode = false;
@@ -282,20 +286,19 @@ class pt_packet_decoder{
     uint64_t aux_tail;
     uint8_t* pt_packets;
 
-    cofi_map_t& cofi_map;
+
     uint64_t bitmap_last_ip = 0;
     uint8_t* trace_bits;
 
     branch_info_mode_t branch_info_mode = TNT_MODE;
     bool tracing_flag = false;
-
     packet_state_t pkt_state;
 
 public:
     uint64_t num_decoded_branch = 0;
 
 public:
-    pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address, uint64_t entry_point);
+    pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, pt_fuzzer* fuzzer);
     ~pt_packet_decoder();
     void set_tracing_flag() { tracing_flag = true; }
     void decode(branch_info_mode_t mode=TNT_MODE);
@@ -497,13 +500,17 @@ public:
     std::chrono::time_point<std::chrono::steady_clock> start;
     std::chrono::time_point<std::chrono::steady_clock> end;
     std::chrono::duration<double> diff;
+    bool fix_cofi_map(uint64_t tip);
 private:
     bool load_binary();
     bool build_cofi_map();
     bool config_pt();
-
     bool open_pt();
-
+public:
+    inline cofi_map_t& get_cofi_map() { return cofi_map; }
+    inline uint64_t get_base_address() { return base_address; }
+    inline uint64_t get_max_address() { return max_address; }
+    inline uint64_t get_entry_point() { return entry_point; }
 };
 
 class fuzzer_config {

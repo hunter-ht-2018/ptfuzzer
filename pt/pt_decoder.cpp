@@ -212,9 +212,16 @@ bool pt_fuzzer::load_binary() {
 bool pt_fuzzer::build_cofi_map() {
     std::cout << "start to disassmble binary..." << std::endl;
     uint32_t num_inst = disassemble_binary( this->code, this->base_address, this->max_address, this->cofi_map);
-    std::cout << "total number of cofi instructions: " << num_inst << std::endl;
+    std::cout << "build_cofi_map, total number of cofi instructions: " << num_inst << std::endl;
     std::cout << "first addr = " << cofi_map.begin()->first << std::endl;
     std::cout << "last addr = " << (cofi_map.rbegin())->first << std::endl; 
+    return true;
+}
+
+bool pt_fuzzer::fix_cofi_map(uint64_t tip) {
+    uint64_t offset = tip - this->base_address;
+    uint32_t num_inst = disassemble_binary( this->code + offset, tip, this->max_address, this->cofi_map);
+    std::cout << "fix_cofi_map: decode " << num_inst << " number of instructions." << std::endl;
     return true;
 }
 
@@ -277,7 +284,7 @@ void pt_fuzzer::stop_pt_trace(uint8_t *trace_bits) {
 #ifdef DEBUG
     std::cout << "stop pt trace OK." << std::endl;
 #endif
-    pt_packet_decoder decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address, this->entry_point);
+    pt_packet_decoder decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this);
     decoder.decode(get_fuzzer_config().branch_mode);
 #ifdef DEBUG
     std::cout << "decode finished, total number of decoded branch: " << decoder.num_decoded_branch << std::endl;
@@ -297,7 +304,7 @@ pt_packet_decoder* pt_fuzzer::debug_stop_pt_trace(uint8_t *trace_bits, branch_in
 #ifdef DEBUG
     std::cout << "stop pt trace OK." << std::endl;
 #endif
-    pt_packet_decoder* decoder = new pt_packet_decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address, this->entry_point);
+    pt_packet_decoder* decoder = new pt_packet_decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this);
     decoder->set_tracing_flag();
     decoder->decode(mode);
 #ifdef DEBUG
@@ -436,9 +443,13 @@ bool pt_tracer::stop_trace(){
 }
 
 
-pt_packet_decoder::pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map,
-        uint64_t min_address, uint64_t max_address, uint64_t entry_point) :
-		        pt_packets(perf_pt_aux), cofi_map(map), min_address(min_address), max_address(max_address), app_entry_point(entry_point){
+pt_packet_decoder::pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, pt_fuzzer* fuzzer) :
+                        pt_packets(perf_pt_aux),
+                        fuzzer(fuzzer),
+                        cofi_map(fuzzer->get_cofi_map()),
+                        min_address(fuzzer->get_base_address()),
+                        max_address(fuzzer->get_max_address()),
+                        app_entry_point(fuzzer->get_entry_point()) {
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)perf_pt_header;
     aux_tail = ATOMIC_GET(pem->aux_tail);
     aux_head = ATOMIC_GET(pem->aux_head);
@@ -489,17 +500,19 @@ void pt_packet_decoder::print_tnt(tnt_cache_t* tnt_cache){
 
 void pt_packet_decoder::decode_tip(uint64_t tip) {
     if(out_of_bounds(tip)) return;
-    cofi_inst_t* cofi_obj = this->cofi_map[tip];
-    if(cofi_obj == nullptr){
-        std::cerr << "can not find cofi for tip: " << std::hex << "0x" << tip << std::endl;
-        assert(false);
-        return;
+    if(this->branch_info_mode == TNT_MODE) {    // accurate TNT decoding.
+        cofi_inst_t* cofi_obj = this->cofi_map[tip];
+        if(cofi_obj == nullptr){
+            std::cerr << "can not find cofi for tip: " << std::hex << "0x" << tip << std::endl;
+            fuzzer->fix_cofi_map(tip);
+            cofi_inst_t* cofi_obj = this->cofi_map[tip];
+            assert(cofi_obj != nullptr);
+        }
+        alter_bitmap(cofi_obj->inst_addr);
     }
-    //if(cofi_obj->bb_start_addr != tip) {
-    //	std::cerr << "tip instruction not hit the first instruction of a basic block." << std::endl;
-    //    fprintf(stderr, "tip = %p,  bb_addr = %p\n", tip, cofi_obj->bb_start_addr);
-    //}
-    alter_bitmap(cofi_obj->inst_addr);
+    else {   //TIP_MODE or FAKE_TNT_MODE
+        alter_bitmap(tip);
+    }
 }
 
 uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
