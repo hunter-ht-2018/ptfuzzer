@@ -103,6 +103,9 @@ void fuzzer_config::load_config() {
         else if(branch_mode == "TNT_MODE") {
             this->branch_mode = TNT_MODE;
         }
+        else if(branch_mode == "FAKE_TNT_MODE") {
+            this->branch_mode = FAKE_TNT_MODE;
+        }
         else {
             std::cerr << "config BRANCH_MODE(" << branch_mode << ") env error, ignore it." << std::endl;
         }
@@ -116,6 +119,9 @@ void fuzzer_config::load_config() {
         break;
     case TNT_MODE:
         std::cout << "Run ptfuzzer with TNT_MODE" << std::endl;
+        break;
+    case FAKE_TNT_MODE:
+        std::cout << "Run ptfuzzer with FAKE_TNT_MODE." << std::endl;
         break;
     default:
         std::cerr << "unkown branch mode." << std::endl;

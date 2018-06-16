@@ -361,9 +361,8 @@ private:
 
         if(this->branch_info_mode == TNT_MODE) {
             decode_tnt(this->last_tip);
+            assert(count_tnt(tnt_cache_state) == 0);
         }
-        //tnt_cache_reset(tnt_cache_state);
-        assert(count_tnt(tnt_cache_state) == 0);
         this->last_tip = 0;
     }
 
