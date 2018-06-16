@@ -610,6 +610,35 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
     return num_tnt_decoded;
 }
 
+uint32_t pt_packet_decoder::decode_fake_tnt(uint64_t entry_point){
+    uint8_t tnt;
+    uint32_t bb_count = 0;
+    while( true){
+        uint16_t bb = 0;
+        int i;
+        for(i = 0; i < 16; i ++) {
+            tnt = process_tnt_cache(tnt_cache_state);
+            if(tnt == TNT_EMPTY) {
+                break;
+            }
+            if(tnt == TAKEN) {
+                bb = (bb << 1) & 1;
+            }
+            else {
+                bb = bb << 1;
+            }
+        }
+        if(i == 0) {
+            break;
+        }
+        else {
+            alter_bitmap(bb);
+            bb_count ++;
+        }
+    }
+    return bb_count;
+}
+
 uint64_t pt_packet_decoder::get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip)
 {
     unsigned char *p = *pp;

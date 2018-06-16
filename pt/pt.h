@@ -186,7 +186,8 @@ typedef enum {
 typedef enum _branch_info_mode_t {
     RAW_PACKET_MODE,
     TIP_MODE,
-    TNT_MODE
+    TNT_MODE,
+    FAKE_TNT_MODE,
 } branch_info_mode_t;
 
 bool perf_config(pid_t pid, run_t* run);
@@ -318,6 +319,9 @@ private:
         if(this->branch_info_mode == TNT_MODE) {
             decode_tnt(this->last_tip);
         }
+        else if(this->branch_info_mode == FAKE_TNT_MODE) {
+            decode_fake_tnt(this->last_tip);
+        }
         decode_tip(tip);
         this->last_tip = tip;
     }
@@ -381,6 +385,9 @@ private:
         if(this->branch_info_mode == TNT_MODE) {
             decode_tnt(this->last_tip);
         }
+        else if(this->branch_info_mode == FAKE_TNT_MODE) {
+            decode_fake_tnt(this->last_tip);
+        }
         assert(count_tnt(tnt_cache_state) == 0);
         (*p) += PT_PKT_PSB_LEN;
         flush();
@@ -394,7 +401,7 @@ private:
 #endif
 
         assert(this->pge_enabled);
-        if(this->branch_info_mode == TNT_MODE) {
+        if(this->branch_info_mode == TNT_MODE || this->branch_info_mode == FAKE_TNT_MODE) {
             append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
         }
 #ifdef DEBUG
@@ -411,7 +418,7 @@ private:
 #endif
 
         assert(this->pge_enabled);
-        if(this->branch_info_mode == TNT_MODE) {
+        if(this->branch_info_mode == TNT_MODE || this->branch_info_mode == FAKE_TNT_MODE) {
             append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
         }
 #ifdef DEBUG
@@ -429,6 +436,7 @@ private:
     void print_tnt(tnt_cache_t* tnt_cache);
     void flush();
     uint32_t decode_tnt(uint64_t entry_point); // for TNT mode only
+    uint32_t decode_fake_tnt(uint64_t entry_point); // for FAKE_TNT mode only
     void decode_tip(uint64_t tip); // for TIP mode only
     inline void alter_bitmap(uint64_t addr) {
         //#if 0
