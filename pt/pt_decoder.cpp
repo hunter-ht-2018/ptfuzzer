@@ -505,7 +505,7 @@ void pt_packet_decoder::decode_tip(uint64_t tip) {
         if(cofi_obj == nullptr){
             std::cerr << "can not find cofi for tip: " << std::hex << "0x" << tip << std::endl;
             fuzzer->fix_cofi_map(tip);
-            cofi_inst_t* cofi_obj = this->cofi_map[tip];
+            cofi_obj = this->cofi_map[tip];
             assert(cofi_obj != nullptr);
         }
         alter_bitmap(cofi_obj->inst_addr);
