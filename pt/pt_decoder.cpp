@@ -498,16 +498,21 @@ void pt_packet_decoder::print_tnt(tnt_cache_t* tnt_cache){
 #endif
 }
 
+cofi_inst_t* pt_packet_decoder::get_cofi_obj(uint64_t addr) {
+    cofi_inst_t* cofi_obj = cofi_map[addr];
+    if(cofi_obj == nullptr){
+        std::cerr << "can not find cofi for tip: " << std::hex << "0x" << addr << std::endl;
+        fuzzer->fix_cofi_map(addr);
+        cofi_obj = cofi_map[addr];
+        assert(cofi_obj != nullptr);
+    }
+    return cofi_obj;
+}
+
 void pt_packet_decoder::decode_tip(uint64_t tip) {
     if(out_of_bounds(tip)) return;
     if(this->branch_info_mode == TNT_MODE) {    // accurate TNT decoding.
-        cofi_inst_t* cofi_obj = this->cofi_map[tip];
-        if(cofi_obj == nullptr){
-            std::cerr << "can not find cofi for tip: " << std::hex << "0x" << tip << std::endl;
-            fuzzer->fix_cofi_map(tip);
-            cofi_obj = this->cofi_map[tip];
-            assert(cofi_obj != nullptr);
-        }
+        cofi_inst_t* cofi_obj = get_cofi_obj(tip);
         alter_bitmap(cofi_obj->inst_addr);
     }
     else {   //TIP_MODE or FAKE_TNT_MODE
@@ -533,7 +538,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 #ifdef DEBUG
     std::cout << "calling decode_tnt for entry_point: " << std::hex << entry_point << std::endl;
 #endif
-    cofi_obj = this->cofi_map[entry_point];
+    cofi_obj = this->get_cofi_obj(entry_point);
     if(cofi_obj == nullptr){
 #ifdef DEBUG
         std::cerr << "can not find cofi for entry_point: " << std::hex << "0x" << entry_point << std::endl;
@@ -572,7 +577,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
                 //	return num_tnt_decoded;
                 //}
 
-                cofi_obj = cofi_map[target_addr];
+                cofi_obj = get_cofi_obj(target_addr);
                 break;
             }
             case NOT_TAKEN:
@@ -590,7 +595,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
                 std::cout << "COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH: " << std::hex << cofi_obj->inst_addr << ", target = " << cofi_obj->target_addr << std::endl;
 #endif
                 uint64_t target_addr = cofi_obj->target_addr;
-                cofi_obj = cofi_map[target_addr];
+                cofi_obj = get_cofi_obj(target_addr);
                 break;
             }
             case COFI_TYPE_INDIRECT_BRANCH:

@@ -454,6 +454,9 @@ private:
             control_flows.push_back(addr);
 
     }
+protected:
+    cofi_inst_t* get_cofi_obj(uint64_t addr);
+
 private:
     std::vector<uint64_t> control_flows;
 public:
