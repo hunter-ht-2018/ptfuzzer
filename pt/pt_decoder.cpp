@@ -219,6 +219,7 @@ bool pt_fuzzer::build_cofi_map() {
 }
 
 bool pt_fuzzer::fix_cofi_map(uint64_t tip) {
+    assert(tip >= this->base_address);
     uint64_t offset = tip - this->base_address;
     uint32_t num_inst = disassemble_binary( this->code + offset, tip, this->max_address, this->cofi_map);
     std::cout << "fix_cofi_map: decode " << num_inst << " number of instructions." << std::endl;
@@ -501,7 +502,16 @@ void pt_packet_decoder::print_tnt(tnt_cache_t* tnt_cache){
 cofi_inst_t* pt_packet_decoder::get_cofi_obj(uint64_t addr) {
     cofi_inst_t* cofi_obj = cofi_map[addr];
     if(cofi_obj == nullptr){
-        std::cerr << "can not find cofi for tip: " << std::hex << "0x" << addr << std::endl;
+#ifdef DEBUG
+        std::cout << "can not find cofi for addr: " << std::hex << "0x" << addr << std::endl;
+#endif
+        if(addr == 0) return nullptr;
+        else if(out_of_bounds(addr)) {
+#ifdef DEBUG
+            std::cout << std::hex << "addr " << addr << " out of bounds(" << this->min_address << ", " << this->max_address << ")." << std::endl;
+#endif
+            return nullptr;
+        }
         fuzzer->fix_cofi_map(addr);
         cofi_obj = cofi_map[addr];
         assert(cofi_obj != nullptr);
@@ -512,6 +522,7 @@ cofi_inst_t* pt_packet_decoder::get_cofi_obj(uint64_t addr) {
 void pt_packet_decoder::decode_tip(uint64_t tip) {
     if(out_of_bounds(tip)) return;
     if(this->branch_info_mode == TNT_MODE) {    // accurate TNT decoding.
+        assert(tip !=0);
         cofi_inst_t* cofi_obj = get_cofi_obj(tip);
         alter_bitmap(cofi_obj->inst_addr);
     }
@@ -538,6 +549,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 #ifdef DEBUG
     std::cout << "calling decode_tnt for entry_point: " << std::hex << entry_point << std::endl;
 #endif
+    if(entry_point == 0) return 0;
     cofi_obj = this->get_cofi_obj(entry_point);
     if(cofi_obj == nullptr){
 #ifdef DEBUG
@@ -576,7 +588,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
                 //    std::cerr << "error: tnt target out of bounds, inst address = " << std::hex << cofi_obj->inst_addr << ", target = " << target_addr << std::endl;
                 //	return num_tnt_decoded;
                 //}
-
+                assert(target_addr != 0);
                 cofi_obj = get_cofi_obj(target_addr);
                 break;
             }
@@ -595,6 +607,7 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
                 std::cout << "COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH: " << std::hex << cofi_obj->inst_addr << ", target = " << cofi_obj->target_addr << std::endl;
 #endif
                 uint64_t target_addr = cofi_obj->target_addr;
+                assert(target_addr != 0);
                 cofi_obj = get_cofi_obj(target_addr);
                 break;
             }
