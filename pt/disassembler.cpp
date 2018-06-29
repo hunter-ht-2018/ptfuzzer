@@ -147,7 +147,7 @@ my_cofi_map::my_cofi_map(uint64_t base_address, uint32_t code_size) : i_cofi_map
     assert(code_size < 100 * 1024 * 1024);
     //map_data = (cofi_inst_t**)malloc(sizeof(cofi_inst_t*) * code_size);
     //memset(map_data, 0, sizeof(cofi_inst_t*) * code_size);
-    map_data = new cofi_inst_t*[code_size];
+    map_data = new cofi_inst_t*[code_size]{nullptr};
 }
 
 my_cofi_map::~my_cofi_map() {

@@ -35,7 +35,7 @@ along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 #include <fcntl.h>
 #include <map>
 #include <string>
-
+#include <assert.h>
 #include "tnt_cache.h"
 typedef struct{
     uint16_t opcode;
@@ -103,11 +103,17 @@ public:
     bool contains(uint64_t addr) {
         return map_data[addr-base_address] != nullptr;
     }
-    inline void set(uint64_t addr, cofi_inst_t* cofi_obj) { map_data[addr-base_address] = cofi_obj; }
-    inline cofi_inst_t* get(uint64_t addr) { return map_data[addr-base_address]; }
+    inline void set(uint64_t addr, cofi_inst_t* cofi_obj) {
+        assert(addr >= base_address && addr < base_address + code_size);
+        map_data[addr-base_address] = cofi_obj; 
+    }
+    inline cofi_inst_t* get(uint64_t addr) {
+        if(addr < base_address || addr >= base_address + code_size) return nullptr;
+        return map_data[addr-base_address]; 
+    }
 };
 
 //typedef std::map<uint64_t, cofi_inst_t*> cofi_map_t;
-typedef std_cofi_map cofi_map_t;
+typedef my_cofi_map cofi_map_t;
 uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t& code_size, cofi_map_t& cofi_map);
 #endif
