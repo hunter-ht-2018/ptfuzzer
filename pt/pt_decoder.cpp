@@ -144,7 +144,7 @@ fuzzer_config& get_fuzzer_config() {
 
 pt_fuzzer::pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point) :
 	        raw_binary_file(raw_binary_file), base_address(base_address), max_address(max_address), entry_point(entry_point),
-	        code(nullptr) , trace(nullptr){
+	        code(nullptr) , trace(nullptr), cofi_map(base_address, max_address-base_address) {
 #ifdef DEBUG
     std::cout << "init pt fuzzer: raw_binary_file = " << raw_binary_file << ", min_address = " << base_address
             << ", max_address = " << max_address << ", entry_point = " << entry_point << std::endl;
@@ -216,7 +216,7 @@ bool pt_fuzzer::build_cofi_map() {
     uint32_t num_inst = disassemble_binary( this->code, this->base_address, code_size, this->cofi_map);
     cofi_map.set_decode_info(base_address, total_code_size - code_size);
     std::cout << "build_cofi_map, total number of cofi instructions: " << num_inst << std::endl;
-    std::cout << "cofi map complete percentage: " << std::endl;
+    std::cout << "cofi map complete percentage: " << cofi_map.complete_percentage() << "\%" << std::endl;
     //std::cout << "first addr = " << cofi_map.begin()->first << std::endl;
     //std::cout << "last addr = " << (cofi_map.rbegin())->first << std::endl;
     return true;
@@ -230,6 +230,7 @@ bool pt_fuzzer::fix_cofi_map(uint64_t tip) {
     uint32_t num_inst = disassemble_binary( this->code + offset, tip, code_size, this->cofi_map);
     cofi_map.set_decode_info(tip, total_code_size - code_size);
     std::cout << "fix_cofi_map: decode " << num_inst << " number of instructions." << std::endl;
+    std::cout << "cofi map complete percentage: " << cofi_map.complete_percentage() << "\%" << std::endl;
     return true;
 }
 
@@ -507,7 +508,7 @@ void pt_packet_decoder::print_tnt(tnt_cache_t* tnt_cache){
 }
 
 cofi_inst_t* pt_packet_decoder::get_cofi_obj(uint64_t addr) {
-    cofi_inst_t* cofi_obj = cofi_map[addr];
+    cofi_inst_t* cofi_obj = cofi_map.get(addr);
     if(cofi_obj == nullptr){
 #ifdef DEBUG
         std::cout << "can not find cofi for addr: " << std::hex << "0x" << addr << std::endl;
@@ -520,7 +521,7 @@ cofi_inst_t* pt_packet_decoder::get_cofi_obj(uint64_t addr) {
             return nullptr;
         }
         fuzzer->fix_cofi_map(addr);
-        cofi_obj = cofi_map[addr];
+        cofi_obj = cofi_map.get(addr);
         assert(cofi_obj != nullptr);
     }
     return cofi_obj;

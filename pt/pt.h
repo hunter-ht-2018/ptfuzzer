@@ -128,60 +128,7 @@
 #define PT_PKT_TIP_PGD_BYTE0	0b00000001
 #define PT_PKT_TIP_FUP_BYTE0	0b00011101
 
-typedef struct {
-    uint64_t newBBCnt;
-}hwcnt_t;
 
-typedef struct decoder_s{
-    uint8_t* code;
-    uint64_t min_addr;
-    uint64_t max_addr;
-    uint64_t entry_point;
-    void (*handler)(uint64_t);
-    uint64_t last_tip;
-    uint64_t last_ip2;
-    bool fup_pkt;
-    bool isr;
-    bool in_range;
-    bool pge_enabled;
-    disassembler_t* disassembler_state;
-    tnt_cache_t* tnt_cache_state;
-    bool is_decode;
-
-} decoder_t;
-
-typedef struct {
-    pid_t pid;
-    pid_t persistentPid;
-    uint64_t pc;
-    uint64_t backtrace;
-    uint64_t access;
-    int exception;
-    char report[_HF_REPORT_SIZE];
-    bool mainWorker;
-    int persistentSock;
-    bool tmOutSignaled;
-
-    struct {
-        /* For Linux code */
-        uint8_t* perfMmapBuf;
-        uint8_t* perfMmapAux;
-        hwcnt_t hwCnts;
-        pid_t attachedPid;
-        int cpuIptBtsFd;
-    }linux_t;
-
-    decoder_t* decoder;
-} run_t;
-
-typedef enum {
-    _HF_DYNFILE_NONE = 0x0,
-    _HF_DYNFILE_INSTR_COUNT = 0x1,
-    _HF_DYNFILE_BRANCH_COUNT = 0x2,
-    _HF_DYNFILE_BTS_EDGE = 0x10,
-    _HF_DYNFILE_IPT_BLOCK = 0x20,
-    _HF_DYNFILE_SOFT = 0x40,
-} dynFileMethod_t;
 
 typedef enum _branch_info_mode_t {
     RAW_PACKET_MODE,
@@ -190,24 +137,6 @@ typedef enum _branch_info_mode_t {
     FAKE_TNT_MODE,
 } branch_info_mode_t;
 
-bool perf_config(pid_t pid, run_t* run);
-bool perf_init();
-bool perf_open(pid_t pid, run_t* run);
-void perf_close(run_t* run);
-bool perf_enable(run_t* run);
-bool perf_analyze(run_t* run);
-bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd);
-bool perf_reap(run_t* run);
-bool perf_mmap_parse(run_t* run);
-bool perf_mmap_reset(run_t* run);
-void pt_bitmap(uint64_t addr);
-bool pt_analyze(run_t* run);
-decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point, void (*handler)(uint64_t));
-tnt_cache_t* pt_decoder_reset(decoder_t* self);
-void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run);
-void pt_decoder_destroy(decoder_t* self);
-void pt_decoder_flush(decoder_t* self);
-void print_bitmap();
 uint8_t* get_trace_bits();
 
 typedef struct binary_info_t {
