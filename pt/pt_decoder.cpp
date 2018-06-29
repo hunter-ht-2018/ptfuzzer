@@ -211,17 +211,24 @@ bool pt_fuzzer::load_binary() {
 
 bool pt_fuzzer::build_cofi_map() {
     std::cout << "start to disassmble binary..." << std::endl;
-    uint32_t num_inst = disassemble_binary( this->code, this->base_address, this->max_address, this->cofi_map);
+    uint64_t total_code_size = this->max_address - this->base_address;
+    uint64_t code_size = total_code_size;
+    uint32_t num_inst = disassemble_binary( this->code, this->base_address, code_size, this->cofi_map);
+    cofi_map.set_decode_info(base_address, total_code_size - code_size);
     std::cout << "build_cofi_map, total number of cofi instructions: " << num_inst << std::endl;
-    std::cout << "first addr = " << cofi_map.begin()->first << std::endl;
-    std::cout << "last addr = " << (cofi_map.rbegin())->first << std::endl; 
+    std::cout << "cofi map complete percentage: " << std::endl;
+    //std::cout << "first addr = " << cofi_map.begin()->first << std::endl;
+    //std::cout << "last addr = " << (cofi_map.rbegin())->first << std::endl;
     return true;
 }
 
 bool pt_fuzzer::fix_cofi_map(uint64_t tip) {
     assert(tip >= this->base_address);
     uint64_t offset = tip - this->base_address;
-    uint32_t num_inst = disassemble_binary( this->code + offset, tip, this->max_address, this->cofi_map);
+    uint64_t total_code_size = this->max_address - tip;
+    uint64_t code_size = total_code_size;
+    uint32_t num_inst = disassemble_binary( this->code + offset, tip, code_size, this->cofi_map);
+    cofi_map.set_decode_info(tip, total_code_size - code_size);
     std::cout << "fix_cofi_map: decode " << num_inst << " number of instructions." << std::endl;
     return true;
 }

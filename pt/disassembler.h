@@ -36,17 +36,7 @@ along with QEMU-PT.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <string>
 
-//~ #include "qemu/osdep.h"
-#include "khash.h"
 #include "tnt_cache.h"
-
-KHASH_MAP_INIT_INT(ADDR0, uint64_t)
-
-typedef struct{
-    uint16_t opcode;
-    uint8_t modrm;
-    uint8_t opcode_prefix;
-} cofi_ins;
 
 typedef enum cofi_types{
     COFI_TYPE_CONDITIONAL_BRANCH,
@@ -57,34 +47,6 @@ typedef enum cofi_types{
     NO_COFI_TYPE
 } cofi_type;
 
-
-typedef struct {
-    uint64_t ins_addr;
-    uint64_t target_addr;
-    cofi_type type;
-} cofi_header;
-
-typedef struct cofi_list {
-    struct cofi_list *list_ptr;
-    struct cofi_list *cofi_ptr;
-    cofi_header *cofi;
-} cofi_list;
-
-typedef struct disassembler_s{
-    uint8_t* code;
-    uint64_t min_addr;
-    uint64_t max_addr;
-    uint64_t entry_point;
-    void (*handler)(uint64_t);
-    //khash_t(ADDR0) *map;
-    uint64_t *map;
-    cofi_list* list_head;
-    cofi_list* list_element;
-    bool debug;
-    bool is_decode;
-
-
-} disassembler_t;
 
 //#define DEBUG_COFI_INST
 typedef struct _cofi_inst_t {
@@ -102,25 +64,23 @@ class my_cofi_map {
     cofi_inst_t** map_data;
     uint64_t base_address;
     uint32_t code_size;
+    uint32_t decoded_size = 0;
 public:
-    my_cofi_map(uint64_t base_address, uint32_t code_size) : base_address(base_address), code_size(code_size) {
-        map_data = (cofi_inst_t**)malloc(sizeof(cofi_inst_t*) * code_size);
-    }
-    ~my_cofi_map() {
-        free(map_data);
-    }
+    my_cofi_map(uint64_t base_address, uint32_t code_size);
+    ~my_cofi_map();
     inline cofi_inst_t*& operator [](uint64_t addr) {
         return map_data[addr-base_address];
     }
+    bool contains(uint64_t addr) {
+        return map_data[addr-base_address] != nullptr;
+    }
+    inline void set(uint64_t addr, cofi_inst_t* cofi_obj) { map_data[addr-base_address] = cofi_obj; }
+    inline cofi_inst_t* get(uint64_t addr) { return map_data[addr-base_address]; }
+    void set_decode_info(uint64_t decoded_addr, uint64_t decoded_size);
+    double complete_percentage() { return (double) decoded_size * 100 / code_size; }
 };
 
-typedef std::map<uint64_t, cofi_inst_t*> cofi_map_t;
-
-disassembler_t* init_disassembler(uint8_t* code, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point, void (*handler)(uint64_t));
-bool reset_disassembler(disassembler_t* self);
-bool trace_disassembler(disassembler_t* self, uint64_t entry_point, bool isr, tnt_cache_t* tnt_cache_state);
-void destroy_disassembler(disassembler_t* self);
-void free_list(cofi_list* head);
-
-uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t max_address, cofi_map_t& cofi_map);
+//typedef std::map<uint64_t, cofi_inst_t*> cofi_map_t;
+typedef my_cofi_map cofi_map_t;
+uint32_t disassemble_binary(const uint8_t* code, uint64_t base_address, uint64_t& code_size, cofi_map_t& cofi_map);
 #endif
