@@ -12,10 +12,12 @@ as usual.
 
 ## Requirements
 
-* linux kernel >= 4.7.0
+* Linux kernel >= 4.13.0. (Ubuntu 16.04.4 is OK in our test.)
 * Intel CPU i5/6/7-x000, x >= 5
 * libcapstone
 * python-cle
+
+You may use check-dep.sh to install the dependent packets.
 
 ## How to install
 
@@ -23,7 +25,7 @@ as usual.
 cd ptfuzzer/
 mkdir build
 cd build
-cmake ../
+cmake ../ -DPREFIX=.
 make
 make install 
 ```
