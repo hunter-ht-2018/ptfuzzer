@@ -58,6 +58,7 @@ static ssize_t files_readFileToBufMax(char* fileName, uint8_t* buf, size_t fileM
     return readSz;
 }
 
+
 void load_config_file(std::map<std::string, std::string>& config_kvs) {
     char line_buf[4096];
     FILE* f = fopen("ptfuzzer.conf", "r");
@@ -90,9 +91,60 @@ void load_config_file(std::map<std::string, std::string>& config_kvs) {
 
 }
 
+void fuzzer_config::load_config() {
+    std::map<std::string, std::string> config_kvs;
+    load_config_file(config_kvs);
+
+    std::string branch_mode = config_kvs["BRANCH_MODE"];
+    if(branch_mode != "") {
+        if(branch_mode == "TIP_MODE") {
+            this->branch_mode = TIP_MODE;
+        }
+        else if(branch_mode == "TNT_MODE") {
+            this->branch_mode = TNT_MODE;
+        }
+        else if(branch_mode == "FAKE_TNT_MODE") {
+            this->branch_mode = FAKE_TNT_MODE;
+        }
+        else {
+            std::cerr << "config BRANCH_MODE(" << branch_mode << ") env error, ignore it." << std::endl;
+        }
+    }
+    else {
+        std::cerr << "BRANCH_MODE is null, using default TNT mode." << std::endl;
+    }
+    switch(this->branch_mode) {
+    case TIP_MODE:
+        std::cout << "Run ptfuzzer with TIP_MODE" << std::endl;
+        break;
+    case TNT_MODE:
+        std::cout << "Run ptfuzzer with TNT_MODE" << std::endl;
+        break;
+    case FAKE_TNT_MODE:
+        std::cout << "Run ptfuzzer with FAKE_TNT_MODE." << std::endl;
+        break;
+    default:
+        std::cerr << "unkown branch mode." << std::endl;
+        assert(false);
+    }
+
+    // load aux buffer size
+    std::string config_aux_buffer_size = config_kvs["PERF_AUX_BUFFER_SIZE"];
+    if(config_aux_buffer_size != "") {
+        uint64_t msize = std::stoul(config_aux_buffer_size, nullptr, 0);
+        this->perf_aux_size = msize * 1024 * 1024;
+        std::cout << "Using perf AUX buffer size: " << msize << " MB." << std::endl;
+    }
+}
+
+fuzzer_config& get_fuzzer_config() {
+    static fuzzer_config config;
+    return config;
+}
+
 pt_fuzzer::pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point) :
 	        raw_binary_file(raw_binary_file), base_address(base_address), max_address(max_address), entry_point(entry_point),
-	        code(nullptr) , trace(nullptr){
+	        code(nullptr) , trace(nullptr), cofi_map(base_address, max_address-base_address) {
 #ifdef DEBUG
     std::cout << "init pt fuzzer: raw_binary_file = " << raw_binary_file << ", min_address = " << base_address
             << ", max_address = " << max_address << ", entry_point = " << entry_point << std::endl;
@@ -158,13 +210,27 @@ bool pt_fuzzer::load_binary() {
 }
 
 bool pt_fuzzer::build_cofi_map() {
-#ifdef DEBUG
     std::cout << "start to disassmble binary..." << std::endl;
-#endif
-    uint32_t num_inst = disassemble_binary( this->code, this->base_address, this->max_address, this->cofi_map);
-#ifdef DEBUG
-    std::cout << "total number of cofi instructions: " << num_inst << std::endl;
-#endif
+    uint64_t total_code_size = this->max_address - this->base_address;
+    uint64_t code_size = total_code_size;
+    uint32_t num_inst = disassemble_binary( this->code, this->base_address, code_size, this->cofi_map);
+    cofi_map.set_decode_info(base_address, total_code_size - code_size);
+    std::cout << "build_cofi_map, total number of cofi instructions: " << num_inst << std::endl;
+    std::cout << "cofi map complete percentage: " << cofi_map.complete_percentage() << "\%" << std::endl;
+    //std::cout << "first addr = " << cofi_map.begin()->first << std::endl;
+    //std::cout << "last addr = " << (cofi_map.rbegin())->first << std::endl;
+    return true;
+}
+
+bool pt_fuzzer::fix_cofi_map(uint64_t tip) {
+    assert(tip >= this->base_address);
+    uint64_t offset = tip - this->base_address;
+    uint64_t total_code_size = this->max_address - tip;
+    uint64_t code_size = total_code_size;
+    uint32_t num_inst = disassemble_binary( this->code + offset, tip, code_size, this->cofi_map);
+    cofi_map.set_decode_info(tip, total_code_size - code_size);
+    std::cout << "fix_cofi_map: decode " << num_inst << " number of instructions." << std::endl;
+    std::cout << "cofi map complete percentage: " << cofi_map.complete_percentage() << "\%" << std::endl;
     return true;
 }
 
@@ -193,34 +259,6 @@ void pt_fuzzer::init() {
     std::cout << "build cofi map OK." << std::endl;
 #endif
 
-    std::map<std::string, std::string> config_kvs;
-    load_config_file(config_kvs);
-    std::string branch_mode = config_kvs["BRANCH_MODE"];
-    if(branch_mode != "") {
-        if(branch_mode == "TIP_MODE") {
-            this->branch_info_mode = TIP_MODE;
-        }
-        else if(branch_mode == "TNT_MODE") {
-            this->branch_info_mode = TNT_MODE;
-        }
-        else {
-            std::cerr << "config BRANCH_MODE(" << branch_mode << ") env error, ignore it." << std::endl;
-        }
-    }
-    else {
-        std::cerr << "BRANCH_MODE is null, using default TNT mode." << std::endl;
-    }
-    switch(this->branch_info_mode) {
-    case TIP_MODE:
-        std::cout << "Run ptfuzzer with TIP_MODE" << std::endl;
-        break;
-    case TNT_MODE:
-        std::cout << "Run ptfuzzer with TNT_MODE" << std::endl;
-        break;
-    default:
-        std::cerr << "unkown branch mode." << std::endl;
-        assert(false);
-    }
 }
 
 void pt_fuzzer::start_pt_trace(int pid) {
@@ -255,8 +293,8 @@ void pt_fuzzer::stop_pt_trace(uint8_t *trace_bits) {
 #ifdef DEBUG
     std::cout << "stop pt trace OK." << std::endl;
 #endif
-    pt_packet_decoder decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address, this->entry_point);
-    decoder.decode(this->branch_info_mode);
+    pt_packet_decoder decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this);
+    decoder.decode(get_fuzzer_config().branch_mode);
 #ifdef DEBUG
     std::cout << "decode finished, total number of decoded branch: " << decoder.num_decoded_branch << std::endl;
 #endif
@@ -275,7 +313,7 @@ pt_packet_decoder* pt_fuzzer::debug_stop_pt_trace(uint8_t *trace_bits, branch_in
 #ifdef DEBUG
     std::cout << "stop pt trace OK." << std::endl;
 #endif
-    pt_packet_decoder* decoder = new pt_packet_decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this->cofi_map, this->base_address, this->max_address, this->entry_point);
+    pt_packet_decoder* decoder = new pt_packet_decoder(trace->get_perf_pt_header(), trace->get_perf_pt_aux(), this);
     decoder->set_tracing_flag();
     decoder->decode(mode);
 #ifdef DEBUG
@@ -357,7 +395,7 @@ bool pt_tracer::open_pt(int pt_perf_type) {
     //~ power of two.
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)this->perf_pt_header;
     pem->aux_offset = pem->data_offset + pem->data_size;
-    pem->aux_size = _HF_PERF_AUX_SZ;
+    pem->aux_size = get_fuzzer_config().perf_aux_size;
     this->perf_pt_aux =
             (uint8_t*)mmap(NULL, pem->aux_size, PROT_READ | PROT_WRITE, MAP_SHARED, perf_fd, pem->aux_offset);
     if (this->perf_pt_aux == MAP_FAILED) {
@@ -382,7 +420,7 @@ bool pt_tracer::open_pt(int pt_perf_type) {
 }
 
 void pt_tracer::close_pt() {
-    munmap(this->perf_pt_aux, _HF_PERF_AUX_SZ);
+    munmap(this->perf_pt_aux, get_fuzzer_config().perf_aux_size);
     this->perf_pt_aux = NULL;
     munmap(this->perf_pt_header, _HF_PERF_MAP_SZ + getpagesize());
     this->perf_pt_header = NULL;
@@ -414,9 +452,13 @@ bool pt_tracer::stop_trace(){
 }
 
 
-pt_packet_decoder::pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map,
-        uint64_t min_address, uint64_t max_address, uint64_t entry_point) :
-		        pt_packets(perf_pt_aux), cofi_map(map), min_address(min_address), max_address(max_address), app_entry_point(entry_point){
+pt_packet_decoder::pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, pt_fuzzer* fuzzer) :
+                        pt_packets(perf_pt_aux),
+                        fuzzer(fuzzer),
+                        cofi_map(fuzzer->get_cofi_map()),
+                        min_address(fuzzer->get_base_address()),
+                        max_address(fuzzer->get_max_address()),
+                        app_entry_point(fuzzer->get_entry_point()) {
     struct perf_event_mmap_page* pem = (struct perf_event_mmap_page*)perf_pt_header;
     aux_tail = ATOMIC_GET(pem->aux_tail);
     aux_head = ATOMIC_GET(pem->aux_head);
@@ -465,18 +507,36 @@ void pt_packet_decoder::print_tnt(tnt_cache_t* tnt_cache){
 #endif
 }
 
+cofi_inst_t* pt_packet_decoder::get_cofi_obj(uint64_t addr) {
+    cofi_inst_t* cofi_obj = cofi_map.get(addr);
+    if(cofi_obj == nullptr){
+#ifdef DEBUG
+        std::cout << "can not find cofi for addr: " << std::hex << "0x" << addr << std::endl;
+#endif
+        if(addr == 0) return nullptr;
+        else if(out_of_bounds(addr)) {
+#ifdef DEBUG
+            std::cout << std::hex << "addr " << addr << " out of bounds(" << this->min_address << ", " << this->max_address << ")." << std::endl;
+#endif
+            return nullptr;
+        }
+        fuzzer->fix_cofi_map(addr);
+        cofi_obj = cofi_map.get(addr);
+        assert(cofi_obj != nullptr);
+    }
+    return cofi_obj;
+}
+
 void pt_packet_decoder::decode_tip(uint64_t tip) {
     if(out_of_bounds(tip)) return;
-    cofi_inst_t* cofi_obj = this->cofi_map[tip];
-    if(cofi_obj == nullptr){
-        std::cerr << "can not find cofi for tip: " << std::hex << "0x" << tip << std::endl;
-        return;
+    if(this->branch_info_mode == TNT_MODE) {    // accurate TNT decoding.
+        assert(tip !=0);
+        cofi_inst_t* cofi_obj = get_cofi_obj(tip);
+        alter_bitmap(cofi_obj->inst_addr);
     }
-    //if(cofi_obj->bb_start_addr != tip) {
-    //	std::cerr << "tip instruction not hit the first instruction of a basic block." << std::endl;
-    //    fprintf(stderr, "tip = %p,  bb_addr = %p\n", tip, cofi_obj->bb_start_addr);
-    //}
-    alter_bitmap(cofi_obj->inst_addr);
+    else {   //TIP_MODE or FAKE_TNT_MODE
+        alter_bitmap(tip);
+    }
 }
 
 uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
@@ -497,7 +557,8 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
 #ifdef DEBUG
     std::cout << "calling decode_tnt for entry_point: " << std::hex << entry_point << std::endl;
 #endif
-    cofi_obj = this->cofi_map[entry_point];
+    if(entry_point == 0) return 0;
+    cofi_obj = this->get_cofi_obj(entry_point);
     if(cofi_obj == nullptr){
 #ifdef DEBUG
         std::cerr << "can not find cofi for entry_point: " << std::hex << "0x" << entry_point << std::endl;
@@ -535,8 +596,8 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
                 //    std::cerr << "error: tnt target out of bounds, inst address = " << std::hex << cofi_obj->inst_addr << ", target = " << target_addr << std::endl;
                 //	return num_tnt_decoded;
                 //}
-
-                cofi_obj = cofi_map[target_addr];
+                assert(target_addr != 0);
+                cofi_obj = get_cofi_obj(target_addr);
                 break;
             }
             case NOT_TAKEN:
@@ -554,7 +615,8 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
                 std::cout << "COFI_TYPE_UNCONDITIONAL_DIRECT_BRANCH: " << std::hex << cofi_obj->inst_addr << ", target = " << cofi_obj->target_addr << std::endl;
 #endif
                 uint64_t target_addr = cofi_obj->target_addr;
-                cofi_obj = cofi_map[target_addr];
+                assert(target_addr != 0);
+                cofi_obj = get_cofi_obj(target_addr);
                 break;
             }
             case COFI_TYPE_INDIRECT_BRANCH:
@@ -591,6 +653,35 @@ uint32_t pt_packet_decoder::decode_tnt(uint64_t entry_point){
     }
 
     return num_tnt_decoded;
+}
+
+uint32_t pt_packet_decoder::decode_fake_tnt(uint64_t entry_point){
+    uint8_t tnt;
+    uint32_t bb_count = 0;
+    while( true){
+        uint16_t bb = 0;
+        int i;
+        for(i = 0; i < 16; i ++) {
+            tnt = process_tnt_cache(tnt_cache_state);
+            if(tnt == TNT_EMPTY) {
+                break;
+            }
+            if(tnt == TAKEN) {
+                bb = (bb << 1) & 1;
+            }
+            else {
+                bb = bb << 1;
+            }
+        }
+        if(i == 0) {
+            break;
+        }
+        else {
+            alter_bitmap(bb);
+            bb_count ++;
+        }
+    }
+    return bb_count;
 }
 
 uint64_t pt_packet_decoder::get_ip_val(unsigned char **pp, unsigned char *end, int len, uint64_t *last_ip)
@@ -651,9 +742,9 @@ void pt_packet_decoder::decode(branch_info_mode_t mode) {
         return;
     }
 
-    if(this->aux_head - this->aux_tail >= _HF_PERF_AUX_SZ ) {
+    if(this->aux_head - this->aux_tail >= get_fuzzer_config().perf_aux_size ) {
         std::cerr << "perf aux buffer full, PT packets may be truncated." << std::endl;
-        std::cerr << "current perf aux buffer size is " << _HF_PERF_AUX_SZ << ", you may need to enlarge it." << std::endl;
+        std::cerr << "current perf aux buffer size is " << get_fuzzer_config().perf_aux_size << ", you may need to enlarge it." << std::endl;
         return;
     }
 

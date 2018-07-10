@@ -44,7 +44,7 @@
 /* Size (in bytes) for report data to be stored in stack before written to file */
 #define _HF_REPORT_SIZE 8192
 #define _HF_PERF_MAP_SZ (1024 * 512)
-#define _HF_PERF_AUX_SZ (16 * 1024 * 1024)
+#define DEFAULT_PERF_AUX_SZ (4 * 1024 * 1024)
 #define _HF_PERF_BITMAP_SIZE_16M (1024U * 1024U * 16U)
 #define _HF_PERF_BITMAP_BITSZ_MASK 0x7ffffff
 
@@ -128,85 +128,15 @@
 #define PT_PKT_TIP_PGD_BYTE0	0b00000001
 #define PT_PKT_TIP_FUP_BYTE0	0b00011101
 
-typedef struct {
-    uint64_t newBBCnt;
-}hwcnt_t;
 
-typedef struct decoder_s{
-    uint8_t* code;
-    uint64_t min_addr;
-    uint64_t max_addr;
-    uint64_t entry_point;
-    void (*handler)(uint64_t);
-    uint64_t last_tip;
-    uint64_t last_ip2;
-    bool fup_pkt;
-    bool isr;
-    bool in_range;
-    bool pge_enabled;
-    disassembler_t* disassembler_state;
-    tnt_cache_t* tnt_cache_state;
-    bool is_decode;
-
-} decoder_t;
-
-typedef struct {
-    pid_t pid;
-    pid_t persistentPid;
-    uint64_t pc;
-    uint64_t backtrace;
-    uint64_t access;
-    int exception;
-    char report[_HF_REPORT_SIZE];
-    bool mainWorker;
-    int persistentSock;
-    bool tmOutSignaled;
-
-    struct {
-        /* For Linux code */
-        uint8_t* perfMmapBuf;
-        uint8_t* perfMmapAux;
-        hwcnt_t hwCnts;
-        pid_t attachedPid;
-        int cpuIptBtsFd;
-    }linux_t;
-
-    decoder_t* decoder;
-} run_t;
-
-typedef enum {
-    _HF_DYNFILE_NONE = 0x0,
-    _HF_DYNFILE_INSTR_COUNT = 0x1,
-    _HF_DYNFILE_BRANCH_COUNT = 0x2,
-    _HF_DYNFILE_BTS_EDGE = 0x10,
-    _HF_DYNFILE_IPT_BLOCK = 0x20,
-    _HF_DYNFILE_SOFT = 0x40,
-} dynFileMethod_t;
 
 typedef enum _branch_info_mode_t {
     RAW_PACKET_MODE,
     TIP_MODE,
-    TNT_MODE
+    TNT_MODE,
+    FAKE_TNT_MODE,
 } branch_info_mode_t;
 
-bool perf_config(pid_t pid, run_t* run);
-bool perf_init();
-bool perf_open(pid_t pid, run_t* run);
-void perf_close(run_t* run);
-bool perf_enable(run_t* run);
-bool perf_analyze(run_t* run);
-bool perf_create(run_t* run, pid_t pid, dynFileMethod_t method, int* perfFd);
-bool perf_reap(run_t* run);
-bool perf_mmap_parse(run_t* run);
-bool perf_mmap_reset(run_t* run);
-void pt_bitmap(uint64_t addr);
-bool pt_analyze(run_t* run);
-decoder_t* pt_decoder_init(uint8_t* code, uint64_t min_addr, uint64_t max_addr, uint64_t entry_point, void (*handler)(uint64_t));
-tnt_cache_t* pt_decoder_reset(decoder_t* self);
-void decode_buffer(decoder_t* self, uint8_t* map, size_t len, run_t* run);
-void pt_decoder_destroy(decoder_t* self);
-void pt_decoder_flush(decoder_t* self);
-void print_bitmap();
 uint8_t* get_trace_bits();
 
 typedef struct binary_info_t {
@@ -265,10 +195,14 @@ typedef struct _packet_state_t {
     bool is_fup_pge_state() { return state == FUP_PGE_state && 	fup_pge_addr == fup_addr; }
 } packet_state_t;
 
+class pt_fuzzer;
 class pt_packet_decoder{
+    pt_fuzzer* fuzzer;
     uint64_t min_address;
     uint64_t max_address;
     uint64_t app_entry_point;
+    cofi_map_t& cofi_map;
+
     uint64_t last_tip = 0;
     uint64_t last_ip2 = 0;
     bool start_decode = false;
@@ -281,20 +215,19 @@ class pt_packet_decoder{
     uint64_t aux_tail;
     uint8_t* pt_packets;
 
-    cofi_map_t& cofi_map;
+
     uint64_t bitmap_last_ip = 0;
     uint8_t* trace_bits;
 
     branch_info_mode_t branch_info_mode = TNT_MODE;
     bool tracing_flag = false;
-
     packet_state_t pkt_state;
 
 public:
     uint64_t num_decoded_branch = 0;
 
 public:
-    pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, cofi_map_t& map, uint64_t min_address, uint64_t max_address, uint64_t entry_point);
+    pt_packet_decoder(uint8_t* perf_pt_header, uint8_t* perf_pt_aux, pt_fuzzer* fuzzer);
     ~pt_packet_decoder();
     void set_tracing_flag() { tracing_flag = true; }
     void decode(branch_info_mode_t mode=TNT_MODE);
@@ -317,6 +250,9 @@ private:
         assert(this->pge_enabled);
         if(this->branch_info_mode == TNT_MODE) {
             decode_tnt(this->last_tip);
+        }
+        else if(this->branch_info_mode == FAKE_TNT_MODE) {
+            decode_fake_tnt(this->last_tip);
         }
         decode_tip(tip);
         this->last_tip = tip;
@@ -357,9 +293,8 @@ private:
 
         if(this->branch_info_mode == TNT_MODE) {
             decode_tnt(this->last_tip);
+            assert(count_tnt(tnt_cache_state) == 0);
         }
-        //tnt_cache_reset(tnt_cache_state);
-        assert(count_tnt(tnt_cache_state) == 0);
         this->last_tip = 0;
     }
 
@@ -381,6 +316,9 @@ private:
         if(this->branch_info_mode == TNT_MODE) {
             decode_tnt(this->last_tip);
         }
+        else if(this->branch_info_mode == FAKE_TNT_MODE) {
+            decode_fake_tnt(this->last_tip);
+        }
         assert(count_tnt(tnt_cache_state) == 0);
         (*p) += PT_PKT_PSB_LEN;
         flush();
@@ -394,7 +332,7 @@ private:
 #endif
 
         assert(this->pge_enabled);
-        if(this->branch_info_mode == TNT_MODE) {
+        if(this->branch_info_mode == TNT_MODE || this->branch_info_mode == FAKE_TNT_MODE) {
             append_tnt_cache(tnt_cache_state, true, (uint64_t)(**p));
         }
 #ifdef DEBUG
@@ -411,7 +349,7 @@ private:
 #endif
 
         assert(this->pge_enabled);
-        if(this->branch_info_mode == TNT_MODE) {
+        if(this->branch_info_mode == TNT_MODE || this->branch_info_mode == FAKE_TNT_MODE) {
             append_tnt_cache(tnt_cache_state, false, (uint64_t)*p);
         }
 #ifdef DEBUG
@@ -429,6 +367,7 @@ private:
     void print_tnt(tnt_cache_t* tnt_cache);
     void flush();
     uint32_t decode_tnt(uint64_t entry_point); // for TNT mode only
+    uint32_t decode_fake_tnt(uint64_t entry_point); // for FAKE_TNT mode only
     void decode_tip(uint64_t tip); // for TIP mode only
     inline void alter_bitmap(uint64_t addr) {
         //#if 0
@@ -444,6 +383,9 @@ private:
             control_flows.push_back(addr);
 
     }
+protected:
+    cofi_inst_t* get_cofi_obj(uint64_t addr);
+
 private:
     std::vector<uint64_t> control_flows;
 public:
@@ -480,8 +422,6 @@ class pt_fuzzer {
     pt_tracer* trace;
 
     uint64_t num_runs = 0;
-    //pt_packet_decoder* decoder = nullptr;
-    branch_info_mode_t branch_info_mode = TNT_MODE;
 
 public:
     pt_fuzzer(std::string raw_binary_file, uint64_t base_address, uint64_t max_address, uint64_t entry_point);
@@ -492,13 +432,27 @@ public:
     std::chrono::time_point<std::chrono::steady_clock> start;
     std::chrono::time_point<std::chrono::steady_clock> end;
     std::chrono::duration<double> diff;
+    bool fix_cofi_map(uint64_t tip);
 private:
     bool load_binary();
     bool build_cofi_map();
     bool config_pt();
-
     bool open_pt();
-
+public:
+    inline cofi_map_t& get_cofi_map() { return cofi_map; }
+    inline uint64_t get_base_address() { return base_address; }
+    inline uint64_t get_max_address() { return max_address; }
+    inline uint64_t get_entry_point() { return entry_point; }
 };
 
+class fuzzer_config {
+public:
+    uint64_t perf_aux_size = DEFAULT_PERF_AUX_SZ;
+    branch_info_mode_t branch_mode = TNT_MODE;
+public:
+    fuzzer_config() {load_config();}
+protected:
+    void load_config();
+};
+fuzzer_config& get_fuzzer_config();
 #endif

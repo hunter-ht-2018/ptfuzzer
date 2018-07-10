@@ -16,10 +16,11 @@ def binary_loaded_info(app_bin):
     if "shared object" in file_info.read():
         bin_type = "shared_object"
     print "binary type is ", bin_type
-    
+    raw_bin = "." + os.path.basename(app_bin) + ".text"
+
     # Now load binary, calculate program loaded base, entry, text_min and text_max 
     ld = cle.Loader(app_bin)
-    bin_code = ""
+    bin_code = None
         
     base_addr = ld.main_object.sections[0].vaddr
     entry = ld.main_object.entry
@@ -29,20 +30,26 @@ def binary_loaded_info(app_bin):
         if i.name == ".text":
             text_min = i.vaddr
             text_max = i.vaddr + i.filesize
+            if os.path.isfile(raw_bin):
+                if os.path.getsize(raw_bin) == i.filesize:
+                    print raw_bin, " exists, if you want to regenerate it, just delete this file."
+                    break;
+            print "reading .text code..."
             raw_bytes = ld.memory.read_bytes(i.vaddr, i.filesize)
+            bin_code = ""
             for byte in raw_bytes:
                 bin_code += byte
             break
         
     #Third, write raw binary code to file
-    raw_bin = "." + os.path.basename(app_bin) + ".text"
-    f = open(raw_bin, "wb")
-    if not f:
-        print "open file " + raw_bin + " for writing failed."
-        sys.exit(-1)
+    if bin_code != None:
+        f = open(raw_bin, "wb")
+        if not f:
+            print "open file " + raw_bin + " for writing failed."
+            sys.exit(-1)
         
-    f.write(bin_code)
-    f.close()
+        f.write(bin_code)
+        f.close()
         
     # Now we have to recalcuate the loaded addresses for Position-independent executables
     if bin_type == "shared_object":
