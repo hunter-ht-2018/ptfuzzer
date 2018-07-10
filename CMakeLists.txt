@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(ptfuzzer)
 
-set(CMAKE_INSTALL_PREFIX .)
-
+IF(NOT PREFIX)
+    set(CMAKE_INSTALL_PREFIX .)
+ELSE()
+    set(CMAKE_INSTALL_PREFIX ${PREFIX})
+ENDIF()
 add_compile_options("-Wall")
 
 add_subdirectory(pt)

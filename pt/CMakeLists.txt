@@ -3,9 +3,16 @@ project(ptfuzzer)
 
 
 add_compile_options("-Wall")
-set ( CMAKE_C_FLAGS "-std=c11 -O3 -D_FILE_OFFSET_BITS=64 -g")
-set ( CMAKE_CXX_FLAGS "-std=c++11 -O3 -D_FILE_OFFSET_BITS=64 -g")
+IF (BUILD_TYPE MATCHES "Debug")
+    message( "build type is Debug." )
+    set ( CMAKE_C_FLAGS "-std=c11 -O0 -D_FILE_OFFSET_BITS=64 -g -DDEBUG")
+    set ( CMAKE_CXX_FLAGS "-std=c++11 -O0 -D_FILE_OFFSET_BITS=64 -g -DDEBUG")
+ELSE()
+    message( "build type is Release." )
+    set ( CMAKE_C_FLAGS "-std=c11 -O3 -D_FILE_OFFSET_BITS=64 -g")
+    set ( CMAKE_CXX_FLAGS "-std=c++11 -O3 -D_FILE_OFFSET_BITS=64 -g")
 
+ENDIF()
 set(PT_SRC pt_decoder.cpp disassembler.cpp tnt_cache.cpp)
 
 add_library(pt STATIC ${PT_SRC})
