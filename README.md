@@ -33,7 +33,7 @@ This will install all python scripts and binary files to *bin* in the current di
 
 ## How to run
 
-* You need to open the performance switch of the system everytime you reboot the system.
+* You need to open the performance switch of the system everytime you reboot the system or simply run **config-run.sh**.
 ```
 su
 echo core >/proc/sys/kernel/core_pattern
