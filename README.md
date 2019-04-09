@@ -31,6 +31,17 @@ make install
 ```
 This will install all python scripts and binary files to *bin* in the current directory.
 
+
+## Linux kernel versions
+
+A linux kernel of 4.13 or 4.14 is recommended.
+
+If a kernel >= 4.15 is used, the kernel has to be booted with the "nopti" option.
+Beginning with 4.15 page table isolation was introduced to protect against meltdown/spectre attacks which prevents intel_pt to trace a specific process if active.
+
+Using a kernel <= 4.9 is not recommended as the intel_pt support is incomplete
+
+
 ## How to run
 
 * You need to open the performance switch of the system everytime you reboot the system or simply run **config-run.sh**.
