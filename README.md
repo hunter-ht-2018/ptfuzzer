@@ -1,6 +1,7 @@
 # PTfuzzer
 
 ## Introduction
+* 中文简介[FreeBuf-PTFuzzer：一个基于硬件加速的二进制程序Fuzz工具](https://www.freebuf.com/sectool/177578.html)
 
 * **Binary-only fuzzing.** We propose a new greybox fuzzer to fuzz any binaryonly softwares and  do not need any source code. In situations where source code is unavailable, compile-time instrumentation and thorough program
 analysis is impossible, and fuzzers like AFL, AFLFast and VUzzer will be of
