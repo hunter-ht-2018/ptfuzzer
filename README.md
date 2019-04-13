@@ -76,3 +76,9 @@ PERF_AUX_BUFFER_SIZE=32  # the size of buffer used to store PT packets.
 *MEM_LIMIT* controls the memory limits of the target program. It is the "-m" arguments passed to afl.
 
 *PERF_AUX_BUFFER_SIZE* controls the size of buffer ptfuzzer allocates for storing PT packest. The PT packets may be truncated if the buffer size is not big enough. 
+
+## Unsolved Issues
++ Parallize PT decoding process. [Issue#12](https://github.com/hunter-ht-2018/ptfuzzer/issues/12)
++ No support for several programs. [Issue#8](https://github.com/hunter-ht-2018/ptfuzzer/issues/8)
++ May crash on first seed. [Issue#7](https://github.com/hunter-ht-2018/ptfuzzer/issues/7)
++ To be continue...
