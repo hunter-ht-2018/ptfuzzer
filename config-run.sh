@@ -20,6 +20,6 @@ case "$MAJOR" in
                echo " $BOOT " | grep -qw nopti || echo Error: you must boot your kernel with the \"nopti\" option
             fi
          fi
-      fi 
+      fi ;;
   *) echo Error: could not determine kernel version: $VER ;;
 esac
