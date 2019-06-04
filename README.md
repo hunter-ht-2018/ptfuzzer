@@ -40,6 +40,17 @@ A linux kernel of 4.13 or 4.14 is recommended.
 If a kernel >= 4.15 is used, the kernel has to be booted with the "nopti" option.
 Beginning with 4.15 page table isolation was introduced to protect against meltdown/spectre attacks which prevents intel_pt to trace a specific process if active.
 
+From a termial run:
+```
+sudo vim /etc/default/grub
+```
+Find the line starting with GRUB_CMDLINE_LINUX_DEFAULT and append nopti or pti=off to its end.
+For example:
+```
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash pti=off"
+```
+Then restart.
+
 Using a kernel <= 4.9 is not recommended as the intel_pt support is incomplete
 
 

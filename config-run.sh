@@ -17,7 +17,7 @@ case "$MAJOR" in
          if [ "$MINOR" -gt 14 ]; then
             BOOT=`dmesg | grep 'BOOT_IMAGE'`
             if [ -z "$BOOT" ]; then echo Warning: could not determine kernel boot options, ensure you are booting with \"nopti\"; else
-               echo " $BOOT " | grep -qw nopti || echo Error: you must boot your kernel with the \"nopti\" option
+               echo " $BOOT " | grep -qw vt.handoff=1 || echo Error: you must boot your kernel with the \"nopti\" option
             fi
          fi
       fi ;;
