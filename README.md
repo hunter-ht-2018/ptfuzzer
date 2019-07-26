@@ -78,7 +78,8 @@ PERF_AUX_BUFFER_SIZE=32  # the size of buffer used to store PT packets.
 *PERF_AUX_BUFFER_SIZE* controls the size of buffer ptfuzzer allocates for storing PT packest. The PT packets may be truncated if the buffer size is not big enough. 
 
 ## Unsolved Issues
-+ Assertion falied. Unclear causes. [Issue15](https://github.com/hunter-ht-2018/ptfuzzer/issues/15)
++ No instrumentation detected. Unclear causes. [Issue#18](https://github.com/hunter-ht-2018/ptfuzzer/issues/18)
++ Assertion falied. Unclear causes. [Issue#15](https://github.com/hunter-ht-2018/ptfuzzer/issues/15)
 + Parallize PT decoding process. [Issue#12](https://github.com/hunter-ht-2018/ptfuzzer/issues/12)
 + No support for several programs. [Issue#8](https://github.com/hunter-ht-2018/ptfuzzer/issues/8)
 + May crash on first seed. [Issue#7](https://github.com/hunter-ht-2018/ptfuzzer/issues/7)
